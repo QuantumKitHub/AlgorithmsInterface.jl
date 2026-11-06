@@ -736,3 +736,106 @@ function Base.summary(
     s = has_stopped ? "reached" : "not reached"
     return print(io, "stopped after $(stop_after.threshold): $s")
 end
+
+@doc raw"""
+    StopWhenBelow <: StoppingCriterion
+
+Stop as soon as a quantity computed from the [`State`](@ref) is at most a threshold.
+This indicates convergence.
+
+# Fields
+
+* `quantity` is a function `(problem, algorithm, state) -> value`.
+* `threshold` is the value below which to stop.
+
+[`get_reason`](@ref) and `summary` refer to the quantity by `nameof(quantity)`, or as
+"value" for an anonymous function or a callable object.
+
+# Example
+
+```julia
+gradient_norm(problem, algorithm, state) = norm(state.gradient)
+StopWhenBelow(gradient_norm, 1e-8) | StopAfterIteration(100)
+```
+"""
+struct StopWhenBelow{F, T <: Real} <: StoppingCriterion
+    quantity::F
+    threshold::T
+end
+
+_quantity_name(stop_when_below::StopWhenBelow) = _quantity_name(stop_when_below.quantity)
+_quantity_name(quantity) = "value"
+function _quantity_name(quantity::Function)
+    name = string(nameof(quantity))
+    return startswith(name, '#') ? "value" : name
+end
+
+indicates_convergence(::Type{<:StopWhenBelow}) = true
+
+@doc """
+    StopWhenBelowState{T} <: StoppingCriterionState
+
+The state of a [`StopWhenBelow`](@ref) criterion, where `T` is the floating point type of its
+threshold.
+
+# Fields
+
+* `value` stores the quantity at the last check, `NaN` before the first one.
+* `at_iteration` indicates at which iteration the criterion was fulfilled,
+  and is `-1` while it is not fulfilled.
+"""
+mutable struct StopWhenBelowState{T <: Real} <: StoppingCriterionState
+    value::T
+    at_iteration::Int
+end
+
+initialize_state(::Problem, ::Algorithm, stop_when_below::StopWhenBelow; kwargs...) =
+    StopWhenBelowState{float(typeof(stop_when_below.threshold))}(NaN, -1)
+
+function initialize_state!(
+        ::Problem, ::Algorithm, ::StopWhenBelow,
+        stopping_criterion_state::StopWhenBelowState;
+        kwargs...,
+    )
+    stopping_criterion_state.value = NaN
+    stopping_criterion_state.at_iteration = -1
+    return stopping_criterion_state
+end
+
+function is_finished(
+        problem::Problem, algorithm::Algorithm, state::State,
+        stop_when_below::StopWhenBelow, ::StopWhenBelowState,
+    )
+    return stop_when_below.quantity(problem, algorithm, state) <= stop_when_below.threshold
+end
+function is_finished!(
+        problem::Problem, algorithm::Algorithm, state::State,
+        stop_when_below::StopWhenBelow, stopping_criterion_state::StopWhenBelowState,
+    )
+    k = state.iteration
+    (k == 0) && (stopping_criterion_state.at_iteration = -1)
+    value = stop_when_below.quantity(problem, algorithm, state)
+    stopping_criterion_state.value = value
+    if value <= stop_when_below.threshold
+        stopping_criterion_state.at_iteration = k
+        return true
+    end
+    return false
+end
+function get_reason(
+        stop_when_below::StopWhenBelow,
+        stopping_criterion_state::StopWhenBelowState,
+    )
+    if is_active(stop_when_below, stopping_criterion_state)
+        return "At iteration $(stopping_criterion_state.at_iteration) the $(_quantity_name(stop_when_below)) ($(stopping_criterion_state.value)) reached the threshold ($(stop_when_below.threshold)).\n"
+    end
+    return nothing
+end
+function Base.summary(
+        io::IO,
+        stop_when_below::StopWhenBelow, stopping_criterion_state::StopWhenBelowState,
+    )
+    has_stopped = is_active(stop_when_below, stopping_criterion_state)
+    s = has_stopped ? "reached" : "not reached"
+    return print(io, "$(_quantity_name(stop_when_below)) ≤ $(stop_when_below.threshold): $s")
+end

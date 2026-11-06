@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DefaultState`, a `State` with the `iterate`, `iteration` and `stopping_criterion_state` fields, and a `data` field for any additional data.
 - Default `initialize_state` and `initialize_state!` methods using a `DefaultState`, so an algorithm only has to provide a `Problem`, an `Algorithm` and a `step!`.
 - Default `initialize_state` and `initialize_state!` methods for any `StoppingCriterion`, using a `DefaultStoppingCriterionState`.
+- `StopWhenBelow` and `StopWhenBelowState`, stopping once a quantity computed from the state is at most a threshold.
 
 ### Changed
 
