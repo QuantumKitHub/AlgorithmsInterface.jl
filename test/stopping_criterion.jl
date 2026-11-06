@@ -500,7 +500,7 @@ end
     @test !is_finished!(problem, algorithm, state)
     @test scs.value == 1.0
     @test isnothing(get_reason(algorithm, state))
-    @test summary(stop_when, scs) == "residual ≤ 0.1: not reached"
+    @test summary(stop_when, scs) == "residual: 1.0 > 0.1"
 
     state.iterate = 0.0625
     state.iteration = 4
@@ -509,7 +509,7 @@ end
     @test indicates_convergence(algorithm, state)
     @test get_reason(algorithm, state) ==
         "At iteration 4 the residual (0.0625) reached the threshold (0.1).\n"
-    @test summary(stop_when, scs) == "residual ≤ 0.1: reached"
+    @test summary(stop_when, scs) == "residual: 0.0625 ≤ 0.1"
 
     initialize_state!(problem, algorithm, stop_when, scs)
     @test !is_active(stop_when, scs)

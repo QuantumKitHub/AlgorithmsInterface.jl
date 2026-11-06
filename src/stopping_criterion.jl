@@ -760,7 +760,7 @@ StopWhenBelow(gradient_norm, 1e-8) | StopAfterIteration(100)
 
 Once the threshold is reached, [`get_reason`](@ref) reads
 "At iteration 12 the gradient_norm (8.3e-9) reached the threshold (1.0e-8).", and `summary`
-reads "gradient_norm ≤ 1.0e-8: reached".
+reads "gradient_norm: 8.3e-9 ≤ 1.0e-8".
 """
 struct StopWhenBelow{F, T <: Real} <: StoppingCriterion
     quantity::F
@@ -839,7 +839,7 @@ function Base.summary(
         io::IO,
         stop_when_below::StopWhenBelow, stopping_criterion_state::StopWhenBelowState,
     )
-    has_stopped = is_active(stop_when_below, stopping_criterion_state)
-    s = has_stopped ? "reached" : "not reached"
-    return print(io, "$(_quantity_name(stop_when_below)) ≤ $(stop_when_below.threshold): $s")
+    value = stopping_criterion_state.value
+    comparison = is_active(stop_when_below, stopping_criterion_state) ? "≤" : ">"
+    return print(io, "$(_quantity_name(stop_when_below)): $value $comparison $(stop_when_below.threshold)")
 end
