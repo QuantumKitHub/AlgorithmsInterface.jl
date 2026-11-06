@@ -40,7 +40,7 @@ export is_finished, is_finished!, get_reason, is_active, indicates_convergence
 export get_active_stopping_criteria
 
 # Logging interface
-export LoggingAction, CallbackAction, IfAction, ActionGroup, StopReasonAction
-export with_algorithmlogger, emit_message
+export LoggingAction, CallbackAction, IfAction, ActionGroup, StopReasonAction, NoLogging
+export AlgorithmLogger, with_algorithmlogger, emit_message, default_logger
 
 end # module AlgorithmsInterface
