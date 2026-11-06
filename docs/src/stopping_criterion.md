@@ -23,6 +23,7 @@ The package ships several concrete [`StoppingCriterion`](@ref)s:
 
 * [`StopAfterIteration`](@ref): stop after a maximum number of iterations.
 * [`StopAfter`](@ref): stop after a wall‑clock time `Period` (e.g. `Second(2)`, `Minute(1)`).
+* [`StopWhenBelow`](@ref): stop once a quantity computed from the state, such as a residual or a gradient norm, is at most a threshold.
 * Combinations [`StopWhenAll`](@ref) (logical AND) and [`StopWhenAny`](@ref) (logical OR) built via `&` and `|` operators.
 
 Each criterion has an associated [`StoppingCriterionState`](@ref) storing dynamic data (iteration when met, elapsed time, etc.).
@@ -121,6 +122,16 @@ Conversely, to demand both a minimum iteration count **and** a time cap, use `&`
 
 ```@example Heron
 criterion = StopAfterIteration(25) & StopAfter(Millisecond(50))  # logical AND
+heron_sqrt(2; stopping_criterion = criterion)
+```
+
+Usually, we would rather stop once the iterate is accurate enough.
+[`StopWhenBelow`](@ref) stops once a quantity computed from `(problem, algorithm, state)` is at most a threshold, and indicates convergence.
+For Heron's method, the residual ``|x^2 - S|`` is a natural choice, combined with an iteration budget as a safeguard:
+
+```@example Heron
+residual(problem, algorithm, state) = abs(state.iterate^2 - problem.S)
+criterion = StopWhenBelow(residual, 1e-12) | StopAfterIteration(50)
 heron_sqrt(2; stopping_criterion = criterion)
 ```
 
@@ -285,6 +296,14 @@ heron_verdict(16.0, StopWhenStable(1e-8) | StopAfterIteration(5))
 This is the distinction the whole two-argument machinery exists for.
 Note also that convergence is a coarse verdict: an iteration cap and a collapsed step size both fail to indicate convergence while calling for quite different responses.
 That is what [`get_active_stopping_criteria`](@ref) is for — it reports exactly which criteria became active, recursing through any [`StopWhenAll`](@ref) and [`StopWhenAny`](@ref) so that the groups themselves never show up.
+
+The reason given by [`StopWhenBelow`](@ref) refers to the quantity by the name of its function, here `residual`:
+
+```@example Heron
+heron_verdict(16.0, StopWhenBelow(residual, 1e-12) | StopAfterIteration(50))
+```
+
+An anonymous function or a callable object is referred to as "value" instead, so passing a named function gives a more informative message.
 
 The [logging system](@ref sec_logging) offers [`StopReasonAction`](@ref) to report the reason at the `:Stop` context, without having to hold on to the state at all.
 

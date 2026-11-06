@@ -757,6 +757,10 @@ This indicates convergence.
 gradient_norm(problem, algorithm, state) = norm(state.gradient)
 StopWhenBelow(gradient_norm, 1e-8) | StopAfterIteration(100)
 ```
+
+Once the threshold is reached, [`get_reason`](@ref) reads
+"At iteration 12 the gradient_norm (8.3e-9) reached the threshold (1.0e-8).", and `summary`
+reads "gradient_norm ≤ 1.0e-8: reached".
 """
 struct StopWhenBelow{F, T <: Real} <: StoppingCriterion
     quantity::F
