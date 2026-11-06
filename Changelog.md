@@ -21,12 +21,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Default `initialize_state` and `initialize_state!` methods using a `DefaultState`, so an algorithm only has to provide a `Problem`, an `Algorithm` and a `step!`.
 - Default `initialize_state` and `initialize_state!` methods for any `StoppingCriterion`, using a `DefaultStoppingCriterionState`.
 - `StopWhenBelow` and `StopWhenBelowState`, stopping once a quantity computed from the state is at most a threshold.
+- `default_logger(problem, algorithm)`, for logging actions an algorithm suggests, for example from a verbosity setting, enabled through `with_algorithmlogger(default_logger(problem, algorithm))`.
+- `NoLogging`, a `LoggingAction` that does nothing, to silence a context.
+- `with_algorithmlogger` accepts an `AlgorithmLogger`, and `inherit = false` to discard the actions of enclosing scopes.
+- Export of `AlgorithmLogger`.
 
 ### Changed
 
 - `indicates_convergence` without a state moved to the type domain: a new criterion implements `indicates_convergence(::Type{YourCriterion})`, and `indicates_convergence(criterion)` forwards to it.
   `StopWhenAll` and `StopWhenAny` combine their children in the type domain as well, so a criterion that only implements the variant taking an instance is no longer accounted for in a group.
 - `StopAfterIteration` now uses the default `initialize_state` and `initialize_state!`.
+- A nested `with_algorithmlogger` now adds its actions to those of the enclosing scope instead of replacing them.
 
 ### Fixed
 

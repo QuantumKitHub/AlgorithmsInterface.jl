@@ -182,3 +182,74 @@ end
     # Restore the original state (in case it was different)
     AlgorithmsInterface.set_global_logging_state!(previous_state)
 end
+
+struct CountProblem <: Problem end
+struct CountAlgorithm <: Algorithm
+    stopping_criterion::StoppingCriterion
+    verbose::Bool
+end
+CountAlgorithm(sc; verbose = false) = CountAlgorithm(sc, verbose)
+
+AlgorithmsInterface.step!(::CountProblem, ::CountAlgorithm, state::DefaultState) =
+    (state.iterate += 1; state)
+
+AlgorithmsInterface.default_logger(::CountProblem, alg::CountAlgorithm) =
+    alg.verbose ? AlgorithmLogger(
+        :PostStep => CallbackAction((p, a, s) -> push!(LOG, "default $(s.iteration)"))
+    ) : AlgorithmLogger()
+
+const LOG = String[]
+record(tag) = CallbackAction((p, a, s; kw...) -> push!(LOG, "$tag $(s.iteration)"))
+
+@testset "nested scopes merge, outer action first" begin
+    empty!(LOG)
+    with_algorithmlogger(:PostStep => record("outer")) do
+        with_algorithmlogger(:PostStep => record("inner")) do
+            solve(CountProblem(), CountAlgorithm(StopAfterIteration(1)); iterate = 0)
+        end
+    end
+    @test LOG == ["outer 1", "inner 1"]
+end
+
+@testset "NoLogging silences one context" begin
+    empty!(LOG)
+    with_algorithmlogger(:PostStep => record("post"), :Stop => record("stop")) do
+        with_algorithmlogger(:PostStep => NoLogging()) do
+            solve(CountProblem(), CountAlgorithm(StopAfterIteration(2)); iterate = 0)
+        end
+    end
+    @test LOG == ["stop 2"]
+end
+
+@testset "inherit = false discards outer scopes" begin
+    empty!(LOG)
+    with_algorithmlogger(:PostStep => record("outer")) do
+        with_algorithmlogger(:Stop => record("inner"); inherit = false) do
+            solve(CountProblem(), CountAlgorithm(StopAfterIteration(2)); iterate = 0)
+        end
+    end
+    @test LOG == ["inner 2"]
+end
+
+@testset "default_logger is only used when requested" begin
+    problem = CountProblem()
+    alg = CountAlgorithm(StopAfterIteration(1); verbose = true)
+
+    empty!(LOG)
+    solve(problem, alg; iterate = 0)
+    @test isempty(LOG)
+
+    empty!(LOG)
+    with_algorithmlogger(default_logger(problem, alg)) do
+        solve(problem, alg; iterate = 0)
+    end
+    @test LOG == ["default 1"]
+
+    empty!(LOG)
+    with_algorithmlogger(default_logger(problem, alg)) do
+        with_algorithmlogger(:PostStep => record("user")) do
+            solve(problem, alg; iterate = 0)
+        end
+    end
+    @test LOG == ["default 1", "user 1"]
+end

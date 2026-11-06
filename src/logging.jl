@@ -119,6 +119,17 @@ function handle_message!(
     return nothing
 end
 
+"""
+    NoLogging()
+
+Concrete [`LoggingAction`](@ref) that does nothing.
+Registering it for a context silences that context, also for actions coming from enclosing
+scopes.
+"""
+struct NoLogging <: LoggingAction end
+
+handle_message!(::NoLogging, ::Problem, ::Algorithm, ::State; kwargs...) = nothing
+
 # Algorithm Logger
 # ----------------
 """
@@ -136,13 +147,38 @@ AlgorithmLogger(args::Pair...) = AlgorithmLogger(Dict{Symbol, LoggingAction}(arg
 
 Base.getindex(logger::AlgorithmLogger, context::Symbol) = get(logger.actions, context, nothing)
 
+_isactive(logger::AlgorithmLogger) = any(action -> !(action isa NoLogging), values(logger.actions))
+
 """
-    with_algorithmlogger(f, (context => action)::Pair{Symbol, LoggingAction}...)
-    with_algorithmlogger((context => action)::Pair{Symbol, LoggingAction}...) do
+    merge(outer::AlgorithmLogger, inner::AlgorithmLogger) -> AlgorithmLogger
+
+Layer the logger of a scope `inner` on top of that of its enclosing scope `outer`.
+A context present in both runs the outer action and then the inner one, unless either is
+[`NoLogging`](@ref).
+"""
+function Base.merge(outer::AlgorithmLogger, inner::AlgorithmLogger)
+    isempty(outer.actions) && return inner
+    isempty(inner.actions) && return outer
+    actions = copy(outer.actions)
+    for (context, action) in inner.actions
+        previous = get(actions, context, NoLogging())
+        actions[context] = previous isa NoLogging || action isa NoLogging ? action :
+            ActionGroup(previous, action)
+    end
+    return AlgorithmLogger(actions)
+end
+
+"""
+    with_algorithmlogger(f, (context => action)::Pair{Symbol, LoggingAction}...; inherit = true)
+    with_algorithmlogger(f, logger::AlgorithmLogger; inherit = true)
+    with_algorithmlogger((context => action)::Pair{Symbol, LoggingAction}...; inherit = true) do
         # insert arbitrary code here
     end
 
 Run the given zero-argument function `f()` while mapping events of given `context`s to their respective `action`s.
+The actions are added to those of enclosing scopes.
+Use `context => NoLogging()` to silence a single context, or `inherit = false` to discard the
+actions of enclosing scopes.
 By default, the following events trigger a logging action with the given `context`:
 
 |  context  |              event                  |
@@ -156,8 +192,10 @@ However, further events and actions can be emitted through the [`emit_message`](
 
 See also the scoped value [`AlgorithmsInterface.algorithm_logger`](@ref).
 """
-@inline function with_algorithmlogger(f, args...)
-    logger = AlgorithmLogger(args...)
+@inline with_algorithmlogger(f, args::Pair...; inherit::Bool = true) =
+    with_algorithmlogger(f, AlgorithmLogger(args...); inherit)
+@inline function with_algorithmlogger(f, logger::AlgorithmLogger; inherit::Bool = true)
+    inherit && (logger = merge(ALGORITHM_LOGGER[], logger))
     return with(f, ALGORITHM_LOGGER => logger)
 end
 
@@ -192,9 +230,19 @@ const ALGORITHM_LOGGER = ScopedValue(AlgorithmLogger())
 function algorithm_logger()
     LOGGING_ENABLED[] || return nothing
     logger = ALGORITHM_LOGGER[]
-    isempty(logger.actions) && return nothing
+    _isactive(logger) || return nothing
     return logger
 end
+
+"""
+    default_logger(problem::Problem, algorithm::Algorithm) -> AlgorithmLogger
+
+The logging actions an algorithm suggests, for example from a verbosity setting.
+These are not used automatically, but can be enabled through
+`with_algorithmlogger(default_logger(problem, algorithm)) do ... end`.
+Defaults to no actions.
+"""
+default_logger(::Problem, ::Algorithm) = AlgorithmLogger()
 
 """
     emit_message(problem::Problem, algorithm::Algorithm, state::State, context::Symbol; kwargs...) -> nothing
