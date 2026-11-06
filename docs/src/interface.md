@@ -141,6 +141,43 @@ state.data.residuals
 
 Here the initial iterate and the data are passed positionally, as `initialize_state(problem, algorithm, iterate, state_data)`.
 
+### Driving the loop yourself
+
+[`solve`](@ref) runs the whole loop at once, and is implemented as
+
+```julia
+function solve(problem::Problem, algorithm::Algorithm; kwargs...)
+    iterator = eachstep(problem, algorithm; kwargs...)
+    for _ in iterator
+    end
+    return finalize_state!(iterator)
+end
+```
+
+Each iteration checks the stopping criterion, and otherwise takes a step and yields the state.
+To run code in between steps, iterate over [`eachstep`](@ref) yourself.
+It takes the same arguments and yields the state after every step:
+
+```@example Heron
+iterator = eachstep(SqrtProblem(16.0), HeronAlgorithm(StopAfterIteration(10)); iterate = 1.0)
+for state in iterator
+    println(state.iteration, ": ", state.iterate)
+    state.iteration == 3 && break
+end
+```
+
+The loop body runs before the next stopping check, so it may also modify the state.
+Leaving the loop with `break` does not end the run: iterating again continues from the current state, and [`finalize_state!`](@ref) returns the result as [`solve`](@ref) would:
+
+```@example Heron
+for state in iterator
+end
+finalize_state!(iterator)
+```
+
+To run again, [`initialize_state!`](@ref)`(iterator; kwargs...)` resets the state and the iterator, taking the same keywords as [`solve!`](@ref).
+An algorithm that needs a different main loop specializes `Base.iterate` on the [`SolverIterator`](@ref AlgorithmsInterface.SolverIterator) for its problem and algorithm types.
+
 ### [Defining your own state](@id sec_custom_state)
 
 If you need named fields or want to dispatch on the state, subtype [`State`](@ref) instead.
@@ -194,6 +231,13 @@ Below are the automatic API docs for the core interface pieces. Read them after 
 ```@autodocs
 Modules = [AlgorithmsInterface]
 Pages = ["interface/interface.jl"]
+Order = [:type, :function]
+Private = true
+```
+
+```@autodocs
+Modules = [AlgorithmsInterface]
+Pages = ["interface/iterator.jl", "deprecated.jl"]
 Order = [:type, :function]
 Private = true
 ```

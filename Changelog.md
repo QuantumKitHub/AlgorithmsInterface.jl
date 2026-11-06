@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `DefaultState`, a `State` with the `iterate`, `iteration` and `stopping_criterion_state` fields, and a `data` field for any additional data.
 - Default `initialize_state` and `initialize_state!` methods using a `DefaultState`, so an algorithm only has to provide a `Problem`, an `Algorithm` and a `step!`.
 - Default `initialize_state` and `initialize_state!` methods for any `StoppingCriterion`, using a `DefaultStoppingCriterionState`.
+- `eachstep`, returning an iterator that performs one step per iteration and yields the state, so the main loop can be driven by the caller.
+  `finalize_state!(iterator)` emits `:Stop` if needed and returns the result, and `initialize_state!(iterator)` prepares it for another run.
 - `default_logger(problem, algorithm)`, for logging actions an algorithm suggests, for example from a verbosity setting, enabled through `with_algorithmlogger(default_logger(problem, algorithm))`.
 - `NoLogging`, a `LoggingAction` that does nothing, to silence a context.
 - `with_algorithmlogger` accepts an `AlgorithmLogger`, and `inherit = false` to discard the actions of enclosing scopes.
@@ -31,6 +33,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `StopWhenAll` and `StopWhenAny` combine their children in the type domain as well, so a criterion that only implements the variant taking an instance is no longer accounted for in a group.
 - `StopAfterIteration` now uses the default `initialize_state` and `initialize_state!`.
 - A nested `with_algorithmlogger` now adds its actions to those of the enclosing scope instead of replacing them.
+- `solve` and `solve!` are implemented through the iterator returned by `eachstep`.
+
+### Deprecated
+
+- `solve_loop!`, in favor of iterating over `eachstep`.
+  `solve` no longer calls it, so a method added to it has no effect; a custom main loop is now provided by specializing `Base.iterate` on the iterator returned by `eachstep`.
 
 ### Fixed
 

@@ -47,24 +47,12 @@ The keyword arguments `kwargs...` have to provide enough details such that
 the corresponding state initialisation [`initialize_state`](@ref)`(problem, algorithm)`
 returns a state.
 
-By default this method continues to call [`solve!`](@ref).
+This runs [`eachstep`](@ref) to completion and returns [`finalize_state!`](@ref).
 """
 function solve(problem::Problem, algorithm::Algorithm; kwargs...)
-    # obtain logger once to minimize overhead from accessing ScopedValue
-    # additionally handle logging initialization to enable stateful LoggingAction
-    logger = algorithm_logger()
-
-    # initialize the state and emit message
-    state = initialize_state(problem, algorithm; kwargs...)
-    emit_message(logger, problem, algorithm, state, :Start)
-
-    # main loop
-    state = solve_loop!(problem, algorithm, state)
-
-    # emit message about finished state
-    emit_message(logger, problem, algorithm, state, :Stop)
-
-    return finalize_state!(problem, algorithm, state)
+    iterator = eachstep(problem, algorithm; kwargs...)
+    for _ in iterator end
+    return finalize_state!(iterator)
 end
 
 @doc """
@@ -74,45 +62,13 @@ Solve the [`Problem`](@ref) using an [`Algorithm`](@ref), starting from a given 
 The state is modified in-place.
 
 All keyword arguments are passed to the [`initialize_state!`](@ref)`(problem, algorithm, state)` function.
+This runs the iterator of [`eachstep`](@ref) to completion and returns [`finalize_state!`](@ref).
 """
 function solve!(problem::Problem, algorithm::Algorithm, state::State; kwargs...)
-    # obtain logger once to minimize overhead from accessing ScopedValue
-    # additionally handle logging initialization to enable stateful LoggingAction
-    logger = algorithm_logger()
-
-    # initialize the state and emit message
     initialize_state!(problem, algorithm, state; kwargs...)
-    emit_message(logger, problem, algorithm, state, :Start)
-
-    # main loop
-    state = solve_loop!(problem, algorithm, state)
-
-    # emit message about finished state
-    emit_message(logger, problem, algorithm, state, :Stop)
-
-    return finalize_state!(problem, algorithm, state)
-end
-
-"""
-    solve_loop!(problem::Problem, algorithm::Algorithm, state::State)
-
-Provide the main loop of the iterative `algorithm` for a given `problem` and starting `state`.
-
-This loop consists of:
-1. Checking for convergence with [`is_finished!`](@ref)
-2. Incrementing the state [`increment!`](@ref)
-3. Performing a step [`step!`](@ref)
-4. Repeat
-"""
-function solve_loop!(problem::Problem, algorithm::Algorithm, state::State)
-    logger = algorithm_logger()
-    while !is_finished!(problem, algorithm, state)
-        emit_message(logger, problem, algorithm, state, :PreStep)
-        increment!(state)
-        step!(problem, algorithm, state)
-        emit_message(logger, problem, algorithm, state, :PostStep)
-    end
-    return state
+    iterator = SolverIterator(problem, algorithm, state)
+    for _ in iterator end
+    return finalize_state!(iterator)
 end
 
 function step! end
