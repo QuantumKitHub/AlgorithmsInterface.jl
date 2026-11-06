@@ -20,6 +20,8 @@ include("interface/interface.jl")
 include("stopping_criterion.jl")
 include("default_state.jl")
 include("logging.jl")
+include("interface/iterator.jl")
+include("deprecated.jl")
 
 include("test_suite.jl")
 
@@ -30,6 +32,7 @@ export initialize_state, initialize_state!
 export finalize_state!
 
 export step!, solve, solve!, solve_loop!
+export eachstep
 
 # stopping criteria
 export StoppingCriterion, StoppingCriterionState
