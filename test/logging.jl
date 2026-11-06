@@ -186,17 +186,10 @@ end
 struct CountProblem <: Problem end
 struct CountAlgorithm <: Algorithm
     stopping_criterion::StoppingCriterion
-    verbose::Bool
 end
-CountAlgorithm(sc; verbose = false) = CountAlgorithm(sc, verbose)
 
 AlgorithmsInterface.step!(::CountProblem, ::CountAlgorithm, state::DefaultState) =
     (state.iterate += 1; state)
-
-AlgorithmsInterface.default_logger(::CountProblem, alg::CountAlgorithm) =
-    alg.verbose ? AlgorithmLogger(
-        :PostStep => CallbackAction((p, a, s) -> push!(LOG, "default $(s.iteration)"))
-    ) : AlgorithmLogger()
 
 const LOG = String[]
 record(tag) = CallbackAction((p, a, s; kw...) -> push!(LOG, "$tag $(s.iteration)"))
@@ -231,25 +224,22 @@ end
     @test LOG == ["inner 2"]
 end
 
-@testset "default_logger is only used when requested" begin
-    problem = CountProblem()
-    alg = CountAlgorithm(StopAfterIteration(1); verbose = true)
+@testset "with_algorithmlogger accepts an AlgorithmLogger" begin
+    logger = AlgorithmLogger(:PostStep => record("logger"))
 
     empty!(LOG)
-    solve(problem, alg; iterate = 0)
-    @test isempty(LOG)
-
-    empty!(LOG)
-    with_algorithmlogger(default_logger(problem, alg)) do
-        solve(problem, alg; iterate = 0)
-    end
-    @test LOG == ["default 1"]
-
-    empty!(LOG)
-    with_algorithmlogger(default_logger(problem, alg)) do
+    with_algorithmlogger(logger) do
         with_algorithmlogger(:PostStep => record("user")) do
-            solve(problem, alg; iterate = 0)
+            solve(CountProblem(), CountAlgorithm(StopAfterIteration(1)); iterate = 0)
         end
     end
-    @test LOG == ["default 1", "user 1"]
+    @test LOG == ["logger 1", "user 1"]
+
+    empty!(LOG)
+    with_algorithmlogger(:PostStep => record("outer")) do
+        with_algorithmlogger(logger; inherit = false) do
+            solve(CountProblem(), CountAlgorithm(StopAfterIteration(1)); iterate = 0)
+        end
+    end
+    @test LOG == ["logger 1"]
 end

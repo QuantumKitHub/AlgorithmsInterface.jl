@@ -21,7 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Default `initialize_state` and `initialize_state!` methods using a `DefaultState`, so an algorithm only has to provide a `Problem`, an `Algorithm` and a `step!`.
 - Default `initialize_state` and `initialize_state!` methods for any `StoppingCriterion`, using a `DefaultStoppingCriterionState`.
 - `StopWhenBelow` and `StopWhenBelowState`, stopping once a quantity computed from the state is at most a threshold.
-- `default_logger(problem, algorithm)`, for logging actions an algorithm suggests, for example from a verbosity setting, enabled through `with_algorithmlogger(default_logger(problem, algorithm))`.
 - `NoLogging`, a `LoggingAction` that does nothing, to silence a context.
 - `with_algorithmlogger` accepts an `AlgorithmLogger`, and `inherit = false` to discard the actions of enclosing scopes.
 - Export of `AlgorithmLogger`.

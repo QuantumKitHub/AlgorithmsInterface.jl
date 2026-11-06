@@ -42,6 +42,6 @@ export get_active_stopping_criteria
 
 # Logging interface
 export LoggingAction, CallbackAction, IfAction, ActionGroup, StopReasonAction, NoLogging
-export AlgorithmLogger, with_algorithmlogger, emit_message, default_logger
+export AlgorithmLogger, with_algorithmlogger, emit_message
 
 end # module AlgorithmsInterface

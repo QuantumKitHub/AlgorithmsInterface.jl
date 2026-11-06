@@ -235,16 +235,6 @@ function algorithm_logger()
 end
 
 """
-    default_logger(problem::Problem, algorithm::Algorithm) -> AlgorithmLogger
-
-The logging actions an algorithm suggests, for example from a verbosity setting.
-These are not used automatically, but can be enabled through
-`with_algorithmlogger(default_logger(problem, algorithm)) do ... end`.
-Defaults to no actions.
-"""
-default_logger(::Problem, ::Algorithm) = AlgorithmLogger()
-
-"""
     emit_message(problem::Problem, algorithm::Algorithm, state::State, context::Symbol; kwargs...) -> nothing
     emit_message(algorithm_logger, problem::Problem, algorithm::Algorithm, state::State, context::Symbol; kwargs...) -> nothing
 
