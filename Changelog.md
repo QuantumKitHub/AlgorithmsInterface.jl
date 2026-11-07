@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `NoLogging`, a `LoggingAction` that does nothing, to silence a context.
 - `with_algorithmlogger` accepts an `AlgorithmLogger`, and `inherit = false` to discard the actions of enclosing scopes.
 - Export of `AlgorithmLogger`.
+- A `name` keyword for `solve` and `solve!`, defaulting to `algorithm_name(algorithm)`, which is the name of the type of the algorithm unless overloaded.
+- `name => logger` pairs in an `AlgorithmLogger`, giving the logger of the solves of that name.
 
 ### Changed
 
@@ -31,6 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `StopWhenAll` and `StopWhenAny` combine their children in the type domain as well, so a criterion that only implements the variant taking an instance is no longer accounted for in a group.
 - `StopAfterIteration` now uses the default `initialize_state` and `initialize_state!`.
 - A nested `with_algorithmlogger` now adds its actions to those of the enclosing scope instead of replacing them.
+- A solve uses the `name => logger` entry of the current logger, and makes it the current logger while it runs.
+  Actions are therefore given per solve, e.g. `with_algorithmlogger(:HeronAlgorithm => AlgorithmLogger(:PostStep => action))`, and no longer apply to subproblems solved from within `step!`.
+- `solve` and `solve!` no longer pass a `name` keyword on to the state initialization.
 
 ### Fixed
 

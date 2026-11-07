@@ -50,7 +50,7 @@ end
 
     # Expect exactly three info logs for iterations 1, 2, 3
     @test_logs (:info, "Iter 1") (:info, "Iter 2") (:info, "Iter 3") begin
-        with_algorithmlogger(:PostStep => iter_logger) do
+        with_algorithmlogger(:LogDummyAlgorithm => AlgorithmLogger(:PostStep => iter_logger)) do
             solve(problem, algorithm)
         end
     end
@@ -73,7 +73,7 @@ end
     #  - an error log emitted by the logging infrastructure on iter 2
     #  - info logs for iterations 1 and 3
     @test_logs (:info, "Iter 1") (:error, "Error during the handling of a logging action") (:info, "Iter 3") begin
-        with_algorithmlogger(:PostStep => flaky_logger) do
+        with_algorithmlogger(:LogDummyAlgorithm => AlgorithmLogger(:PostStep => flaky_logger)) do
             solve(problem, algorithm)
         end
     end
@@ -94,7 +94,7 @@ end
 
     # Expect logs only for iterations 2 and 4
     @test_logs (:info, "Even Iter 2") (:info, "Even Iter 4") begin
-        with_algorithmlogger(:PostStep => if_logger) do
+        with_algorithmlogger(:LogDummyAlgorithm => AlgorithmLogger(:PostStep => if_logger)) do
             solve(problem, algorithm)
         end
     end
@@ -118,7 +118,7 @@ end
 
     # Expect both loggers to log for each iteration
     @test_logs (:info, "Logger1 Iter 1") (:info, "Logger2 Iter 1") (:info, "Logger1 Iter 2") (:info, "Logger2 Iter 2") begin
-        with_algorithmlogger(:PostStep => group_logger) do
+        with_algorithmlogger(:LogDummyAlgorithm => AlgorithmLogger(:PostStep => group_logger)) do
             solve(problem, algorithm)
         end
     end
@@ -129,7 +129,7 @@ end
     algorithm = LogDummyAlgorithm(StopAfterIteration(3))
 
     io = IOBuffer()
-    with_algorithmlogger(:Stop => StopReasonAction(io; prefix = "Stopped: ")) do
+    with_algorithmlogger(:LogDummyAlgorithm => AlgorithmLogger(:Stop => StopReasonAction(io; prefix = "Stopped: "))) do
         solve(problem, algorithm)
     end
     reason = String(take!(io))
@@ -138,7 +138,7 @@ end
     # nothing is reported while no criterion has indicated to stop, so registering the action on
     # another context is harmless
     io = IOBuffer()
-    with_algorithmlogger(:Start => StopReasonAction(io)) do
+    with_algorithmlogger(:LogDummyAlgorithm => AlgorithmLogger(:Start => StopReasonAction(io))) do
         solve(problem, algorithm)
     end
     @test isempty(String(take!(io)))
@@ -163,7 +163,7 @@ end
 
     # Even with a logger configured, no logs should be emitted
     @test_logs begin
-        with_algorithmlogger(:PostStep => iter_logger) do
+        with_algorithmlogger(:LogDummyAlgorithm => AlgorithmLogger(:PostStep => iter_logger)) do
             solve(problem, algorithm)
         end
     end
@@ -174,7 +174,7 @@ end
 
     # Now logging should work again
     @test_logs (:info, "Iter 1") (:info, "Iter 2") (:info, "Iter 3") begin
-        with_algorithmlogger(:PostStep => iter_logger) do
+        with_algorithmlogger(:LogDummyAlgorithm => AlgorithmLogger(:PostStep => iter_logger)) do
             solve(problem, algorithm)
         end
     end
@@ -196,8 +196,8 @@ record(tag) = CallbackAction((p, a, s; kw...) -> push!(LOG, "$tag $(s.iteration)
 
 @testset "nested scopes merge, outer action first" begin
     empty!(LOG)
-    with_algorithmlogger(:PostStep => record("outer")) do
-        with_algorithmlogger(:PostStep => record("inner")) do
+    with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:PostStep => record("outer"))) do
+        with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:PostStep => record("inner"))) do
             solve(CountProblem(), CountAlgorithm(StopAfterIteration(1)); iterate = 0)
         end
     end
@@ -206,8 +206,8 @@ end
 
 @testset "NoLogging silences one context" begin
     empty!(LOG)
-    with_algorithmlogger(:PostStep => record("post"), :Stop => record("stop")) do
-        with_algorithmlogger(:PostStep => NoLogging()) do
+    with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:PostStep => record("post"), :Stop => record("stop"))) do
+        with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:PostStep => NoLogging())) do
             solve(CountProblem(), CountAlgorithm(StopAfterIteration(2)); iterate = 0)
         end
     end
@@ -216,8 +216,8 @@ end
 
 @testset "inherit = false discards outer scopes" begin
     empty!(LOG)
-    with_algorithmlogger(:PostStep => record("outer")) do
-        with_algorithmlogger(:Stop => record("inner"); inherit = false) do
+    with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:PostStep => record("outer"))) do
+        with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:Stop => record("inner")); inherit = false) do
             solve(CountProblem(), CountAlgorithm(StopAfterIteration(2)); iterate = 0)
         end
     end
@@ -225,21 +225,104 @@ end
 end
 
 @testset "with_algorithmlogger accepts an AlgorithmLogger" begin
-    logger = AlgorithmLogger(:PostStep => record("logger"))
+    logger = AlgorithmLogger(:CountAlgorithm => AlgorithmLogger(:PostStep => record("logger")))
 
     empty!(LOG)
     with_algorithmlogger(logger) do
-        with_algorithmlogger(:PostStep => record("user")) do
+        with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:PostStep => record("user"))) do
             solve(CountProblem(), CountAlgorithm(StopAfterIteration(1)); iterate = 0)
         end
     end
     @test LOG == ["logger 1", "user 1"]
 
     empty!(LOG)
-    with_algorithmlogger(:PostStep => record("outer")) do
+    with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:PostStep => record("outer"))) do
         with_algorithmlogger(logger; inherit = false) do
             solve(CountProblem(), CountAlgorithm(StopAfterIteration(1)); iterate = 0)
         end
     end
     @test LOG == ["logger 1"]
+end
+
+@testset "a solve uses the entry of its name" begin
+    empty!(LOG)
+    with_algorithmlogger(:PostStep => record("scope"), :CountAlgorithm => AlgorithmLogger(:Stop => record("count"))) do
+        solve(CountProblem(), CountAlgorithm(StopAfterIteration(1)); iterate = 0)
+        solve(CountProblem(), CountAlgorithm(StopAfterIteration(1)); name = :other, iterate = 0)
+        state = initialize_state(CountProblem(), CountAlgorithm(StopAfterIteration(2)); iterate = 0)
+        solve!(CountProblem(), CountAlgorithm(StopAfterIteration(2)), state; iterate = 0)
+    end
+    @test LOG == ["count 1", "count 2"]
+end
+
+struct NestProblem <: Problem end
+struct NestAlgorithm <: Algorithm
+    stopping_criterion::StoppingCriterion
+    inner::CountAlgorithm
+end
+
+function AlgorithmsInterface.step!(problem::NestProblem, algorithm::NestAlgorithm, state::DefaultState)
+    emit_message(problem, algorithm, state, :Custom)
+    solve(CountProblem(), algorithm.inner; name = :first, iterate = 0)
+    solve(CountProblem(), algorithm.inner; name = :second, iterate = 0)
+    state.iterate += 1
+    return state
+end
+
+@testset "subsolvers descend one level by name" begin
+    nest = NestAlgorithm(StopAfterIteration(2), CountAlgorithm(StopAfterIteration(1)))
+    logger = AlgorithmLogger(
+        :NestAlgorithm => AlgorithmLogger(
+            :PostStep => record("nest"),
+            :Custom => record("custom"),
+            :first => AlgorithmLogger(:Stop => record("first")),
+        ),
+    )
+    empty!(LOG)
+    with_algorithmlogger(logger) do
+        solve(NestProblem(), nest; iterate = 0)
+    end
+    @test LOG == ["custom 1", "first 1", "nest 1", "custom 2", "first 1", "nest 2"]
+
+    empty!(LOG)
+    with_algorithmlogger(:first => AlgorithmLogger(:Stop => record("first"))) do
+        solve(NestProblem(), nest; iterate = 0)
+    end
+    @test isempty(LOG)
+end
+
+struct ScopedNestAlgorithm <: Algorithm
+    stopping_criterion::StoppingCriterion
+    inner::CountAlgorithm
+end
+
+function AlgorithmsInterface.step!(::NestProblem, algorithm::ScopedNestAlgorithm, state::DefaultState)
+    with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:Stop => record("author"))) do
+        solve(CountProblem(), algorithm.inner; iterate = 0)
+    end
+    state.iterate += 1
+    return state
+end
+
+@testset "scopes inside step! apply to subsolvers" begin
+    empty!(LOG)
+    algorithm = ScopedNestAlgorithm(StopAfterIteration(2), CountAlgorithm(StopAfterIteration(1)))
+    with_algorithmlogger(:ScopedNestAlgorithm => AlgorithmLogger(:Stop => record("user"))) do
+        solve(NestProblem(), algorithm; iterate = 0)
+    end
+    @test LOG == ["author 1", "author 1", "user 2"]
+end
+
+struct RenamedAlgorithm <: Algorithm
+    stopping_criterion::StoppingCriterion
+end
+AlgorithmsInterface.step!(::CountProblem, ::RenamedAlgorithm, state::DefaultState) = state
+AlgorithmsInterface.algorithm_name(::RenamedAlgorithm) = :renamed
+
+@testset "algorithm_name sets the default name" begin
+    empty!(LOG)
+    with_algorithmlogger(:renamed => AlgorithmLogger(:Stop => record("renamed"))) do
+        solve(CountProblem(), RenamedAlgorithm(StopAfterIteration(1)); iterate = 0)
+    end
+    @test LOG == ["renamed 1"]
 end

@@ -25,6 +25,7 @@ include("test_suite.jl")
 
 # general interface
 export Algorithm, Problem, State
+export algorithm_name
 export DefaultState
 export initialize_state, initialize_state!
 export finalize_state!
