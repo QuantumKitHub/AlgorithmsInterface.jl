@@ -488,3 +488,42 @@ end
     @test get_active_stopping_criteria(algorithm, state) ==
         get_active_stopping_criteria(stop_when, scs)
 end
+
+@testset "StopWhenBelow" begin
+    residual(problem, algorithm, state) = state.iterate
+    stop_when = StopWhenBelow(residual, 0.1)
+    @test indicates_convergence(stop_when)
+    algorithm = AIT.DummyAlgorithm(stop_when)
+    scs = initialize_state(problem, algorithm, stop_when)
+    @test scs isa StopWhenBelowState{Float64}
+    state = AIT.DummyState(1.0, scs, 0)
+    @test !is_finished!(problem, algorithm, state)
+    @test scs.value == 1.0
+    @test isnothing(get_reason(algorithm, state))
+    @test summary(stop_when, scs) == "residual: 1.0 > 0.1"
+
+    state.iterate = 0.0625
+    state.iteration = 4
+    @test is_finished(problem, algorithm, state)
+    @test is_finished!(problem, algorithm, state)
+    @test indicates_convergence(algorithm, state)
+    @test get_reason(algorithm, state) ==
+        "At iteration 4 the residual (0.0625) reached the threshold (0.1).\n"
+    @test summary(stop_when, scs) == "residual: 0.0625 ≤ 0.1"
+
+    initialize_state!(problem, algorithm, stop_when, scs)
+    @test !is_active(stop_when, scs)
+    @test isnan(scs.value)
+
+    stop_when = StopWhenBelow((problem, algorithm, state) -> state.iterate, 0.0f0)
+    @test initialize_state(problem, algorithm, stop_when) isa StopWhenBelowState{Float32}
+    @test AlgorithmsInterface._quantity_name(stop_when) == "value"
+    @test AlgorithmsInterface._quantity_name(StopWhenBelow(StopAfterIteration(1), 0.0)) == "value"
+    stop_when = stop_when | StopAfterIteration(3)
+    algorithm = AIT.DummyAlgorithm(stop_when)
+    scs = initialize_state(problem, algorithm, stop_when)
+    state = AIT.DummyState(1.0f0, scs, 3)
+    @test is_finished!(problem, algorithm, state)
+    @test !indicates_convergence(algorithm, state)
+    @test isnothing(get_reason(stop_when.criteria[1], scs.criteria_states[1]))
+end

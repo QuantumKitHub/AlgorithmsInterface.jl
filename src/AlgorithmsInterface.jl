@@ -33,8 +33,9 @@ export step!, solve, solve!, solve_loop!
 
 # stopping criteria
 export StoppingCriterion, StoppingCriterionState
-export StopAfter, StopAfterIteration, StopWhenAll, StopWhenAny
+export StopAfter, StopAfterIteration, StopWhenAll, StopWhenAny, StopWhenBelow
 export DefaultStoppingCriterionState, StopAfterTimePeriodState, GroupStoppingCriterionState
+export StopWhenBelowState
 
 export is_finished, is_finished!, get_reason, is_active, indicates_convergence
 export get_active_stopping_criteria
