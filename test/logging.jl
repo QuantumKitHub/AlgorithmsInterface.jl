@@ -191,68 +191,67 @@ end
 AlgorithmsInterface.step!(::CountProblem, ::CountAlgorithm, state::DefaultState) =
     (state.iterate += 1; state)
 
-const LOG = String[]
-record(tag) = CallbackAction((p, a, s; kw...) -> push!(LOG, "$tag $(s.iteration)"))
+record(log, tag) = CallbackAction((p, a, s; kw...) -> push!(log, "$tag $(s.iteration)"))
 
 @testset "nested scopes merge, outer action first" begin
-    empty!(LOG)
-    with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:PostStep => record("outer"))) do
-        with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:PostStep => record("inner"))) do
+    log = String[]
+    with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:PostStep => record(log, "outer"))) do
+        with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:PostStep => record(log, "inner"))) do
             solve(CountProblem(), CountAlgorithm(StopAfterIteration(1)); iterate = 0)
         end
     end
-    @test LOG == ["outer 1", "inner 1"]
+    @test log == ["outer 1", "inner 1"]
 end
 
 @testset "NoLogging silences one context" begin
-    empty!(LOG)
-    with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:PostStep => record("post"), :Stop => record("stop"))) do
+    log = String[]
+    with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:PostStep => record(log, "post"), :Stop => record(log, "stop"))) do
         with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:PostStep => NoLogging())) do
             solve(CountProblem(), CountAlgorithm(StopAfterIteration(2)); iterate = 0)
         end
     end
-    @test LOG == ["stop 2"]
+    @test log == ["stop 2"]
 end
 
 @testset "inherit = false discards outer scopes" begin
-    empty!(LOG)
-    with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:PostStep => record("outer"))) do
-        with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:Stop => record("inner")); inherit = false) do
+    log = String[]
+    with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:PostStep => record(log, "outer"))) do
+        with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:Stop => record(log, "inner")); inherit = false) do
             solve(CountProblem(), CountAlgorithm(StopAfterIteration(2)); iterate = 0)
         end
     end
-    @test LOG == ["inner 2"]
+    @test log == ["inner 2"]
 end
 
 @testset "with_algorithmlogger accepts an AlgorithmLogger" begin
-    logger = AlgorithmLogger(:CountAlgorithm => AlgorithmLogger(:PostStep => record("logger")))
+    log = String[]
+    logger = AlgorithmLogger(:CountAlgorithm => AlgorithmLogger(:PostStep => record(log, "logger")))
 
-    empty!(LOG)
     with_algorithmlogger(logger) do
-        with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:PostStep => record("user"))) do
+        with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:PostStep => record(log, "user"))) do
             solve(CountProblem(), CountAlgorithm(StopAfterIteration(1)); iterate = 0)
         end
     end
-    @test LOG == ["logger 1", "user 1"]
+    @test log == ["logger 1", "user 1"]
 
-    empty!(LOG)
-    with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:PostStep => record("outer"))) do
+    empty!(log)
+    with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:PostStep => record(log, "outer"))) do
         with_algorithmlogger(logger; inherit = false) do
             solve(CountProblem(), CountAlgorithm(StopAfterIteration(1)); iterate = 0)
         end
     end
-    @test LOG == ["logger 1"]
+    @test log == ["logger 1"]
 end
 
 @testset "a solve uses the entry of its name" begin
-    empty!(LOG)
-    with_algorithmlogger(:PostStep => record("scope"), :CountAlgorithm => AlgorithmLogger(:Stop => record("count"))) do
+    log = String[]
+    with_algorithmlogger(:PostStep => record(log, "scope"), :CountAlgorithm => AlgorithmLogger(:Stop => record(log, "count"))) do
         solve(CountProblem(), CountAlgorithm(StopAfterIteration(1)); iterate = 0)
         solve(CountProblem(), CountAlgorithm(StopAfterIteration(1)); name = :other, iterate = 0)
         state = initialize_state(CountProblem(), CountAlgorithm(StopAfterIteration(2)); iterate = 0)
         solve!(CountProblem(), CountAlgorithm(StopAfterIteration(2)), state; iterate = 0)
     end
-    @test LOG == ["count 1", "count 2"]
+    @test log == ["count 1", "count 2"]
 end
 
 struct NestProblem <: Problem end
@@ -270,34 +269,35 @@ function AlgorithmsInterface.step!(problem::NestProblem, algorithm::NestAlgorith
 end
 
 @testset "subsolvers descend one level by name" begin
+    log = String[]
     nest = NestAlgorithm(StopAfterIteration(2), CountAlgorithm(StopAfterIteration(1)))
     logger = AlgorithmLogger(
         :NestAlgorithm => AlgorithmLogger(
-            :PostStep => record("nest"),
-            :Custom => record("custom"),
-            :first => AlgorithmLogger(:Stop => record("first")),
+            :PostStep => record(log, "nest"),
+            :Custom => record(log, "custom"),
+            :first => AlgorithmLogger(:Stop => record(log, "first")),
         ),
     )
-    empty!(LOG)
     with_algorithmlogger(logger) do
         solve(NestProblem(), nest; iterate = 0)
     end
-    @test LOG == ["custom 1", "first 1", "nest 1", "custom 2", "first 1", "nest 2"]
+    @test log == ["custom 1", "first 1", "nest 1", "custom 2", "first 1", "nest 2"]
 
-    empty!(LOG)
-    with_algorithmlogger(:first => AlgorithmLogger(:Stop => record("first"))) do
+    empty!(log)
+    with_algorithmlogger(:first => AlgorithmLogger(:Stop => record(log, "first"))) do
         solve(NestProblem(), nest; iterate = 0)
     end
-    @test isempty(LOG)
+    @test isempty(log)
 end
 
 struct ScopedNestAlgorithm <: Algorithm
     stopping_criterion::StoppingCriterion
     inner::CountAlgorithm
+    inner_stop::LoggingAction
 end
 
 function AlgorithmsInterface.step!(::NestProblem, algorithm::ScopedNestAlgorithm, state::DefaultState)
-    with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:Stop => record("author"))) do
+    with_algorithmlogger(:CountAlgorithm => AlgorithmLogger(:Stop => algorithm.inner_stop)) do
         solve(CountProblem(), algorithm.inner; iterate = 0)
     end
     state.iterate += 1
@@ -305,12 +305,12 @@ function AlgorithmsInterface.step!(::NestProblem, algorithm::ScopedNestAlgorithm
 end
 
 @testset "scopes inside step! apply to subsolvers" begin
-    empty!(LOG)
-    algorithm = ScopedNestAlgorithm(StopAfterIteration(2), CountAlgorithm(StopAfterIteration(1)))
-    with_algorithmlogger(:ScopedNestAlgorithm => AlgorithmLogger(:Stop => record("user"))) do
+    log = String[]
+    algorithm = ScopedNestAlgorithm(StopAfterIteration(2), CountAlgorithm(StopAfterIteration(1)), record(log, "author"))
+    with_algorithmlogger(:ScopedNestAlgorithm => AlgorithmLogger(:Stop => record(log, "user"))) do
         solve(NestProblem(), algorithm; iterate = 0)
     end
-    @test LOG == ["author 1", "author 1", "user 2"]
+    @test log == ["author 1", "author 1", "user 2"]
 end
 
 struct RenamedAlgorithm <: Algorithm
@@ -320,9 +320,9 @@ AlgorithmsInterface.step!(::CountProblem, ::RenamedAlgorithm, state::DefaultStat
 AlgorithmsInterface.algorithm_name(::RenamedAlgorithm) = :renamed
 
 @testset "algorithm_name sets the default name" begin
-    empty!(LOG)
-    with_algorithmlogger(:renamed => AlgorithmLogger(:Stop => record("renamed"))) do
+    log = String[]
+    with_algorithmlogger(:renamed => AlgorithmLogger(:Stop => record(log, "renamed"))) do
         solve(CountProblem(), RenamedAlgorithm(StopAfterIteration(1)); iterate = 0)
     end
-    @test LOG == ["renamed 1"]
+    @test log == ["renamed 1"]
 end
