@@ -53,19 +53,14 @@ An algorithm that solves several subproblems with the same algorithm can give ea
 By default this method continues to call [`solve!`](@ref).
 """
 function solve(problem::Problem, algorithm::Algorithm; name::Symbol = algorithm_name(algorithm), kwargs...)
-    scope = ALGORITHM_LOGGER[]
-    isempty(scope) && return _solve(problem, algorithm; kwargs...)
-    logger = get(AlgorithmLogger, scope.loggers, name)
-    return @with ALGORITHM_LOGGER => logger _solve(problem, algorithm; kwargs...)
-end
-
-function _solve(problem::Problem, algorithm::Algorithm; kwargs...)
-    logger = algorithm_logger()
-    state = initialize_state(problem, algorithm; kwargs...)
-    emit_message(logger, problem, algorithm, state, :Start)
-    state = solve_loop!(problem, algorithm, state)
-    emit_message(logger, problem, algorithm, state, :Stop)
-    return finalize_state!(problem, algorithm, state)
+    return @with ALGORITHM_LOGGER => get(AlgorithmLogger, ALGORITHM_LOGGER[].loggers, name) begin
+        logger = algorithm_logger()
+        state = initialize_state(problem, algorithm; kwargs...)
+        emit_message(logger, problem, algorithm, state, :Start)
+        state = solve_loop!(problem, algorithm, state)
+        emit_message(logger, problem, algorithm, state, :Stop)
+        finalize_state!(problem, algorithm, state)
+    end
 end
 
 @doc """
@@ -78,19 +73,14 @@ The `name` is used as in [`solve`](@ref), and all other keyword arguments are pa
 [`initialize_state!`](@ref)`(problem, algorithm, state)` function.
 """
 function solve!(problem::Problem, algorithm::Algorithm, state::State; name::Symbol = algorithm_name(algorithm), kwargs...)
-    scope = ALGORITHM_LOGGER[]
-    isempty(scope) && return _solve!(problem, algorithm, state; kwargs...)
-    logger = get(AlgorithmLogger, scope.loggers, name)
-    return @with ALGORITHM_LOGGER => logger _solve!(problem, algorithm, state; kwargs...)
-end
-
-function _solve!(problem::Problem, algorithm::Algorithm, state::State; kwargs...)
-    logger = algorithm_logger()
-    initialize_state!(problem, algorithm, state; kwargs...)
-    emit_message(logger, problem, algorithm, state, :Start)
-    state = solve_loop!(problem, algorithm, state)
-    emit_message(logger, problem, algorithm, state, :Stop)
-    return finalize_state!(problem, algorithm, state)
+    return @with ALGORITHM_LOGGER => get(AlgorithmLogger, ALGORITHM_LOGGER[].loggers, name) begin
+        logger = algorithm_logger()
+        initialize_state!(problem, algorithm, state; kwargs...)
+        emit_message(logger, problem, algorithm, state, :Start)
+        state = solve_loop!(problem, algorithm, state)
+        emit_message(logger, problem, algorithm, state, :Stop)
+        finalize_state!(problem, algorithm, state)
+    end
 end
 
 """

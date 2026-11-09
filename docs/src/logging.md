@@ -435,7 +435,7 @@ nothing # hide
 
 ## [Nested solves](@id sec_nested_solves)
 
-An algorithm can solve subproblems with other algorithms from within its `step!`.
+An algorithm can solve subproblems by making use of other algorithms from within its `step!`.
 For example, the fourth root can be computed by taking the square root twice:
 
 ```@example Heron
@@ -454,9 +454,8 @@ fourth_root = FourthRootAlgorithm(StopAfterIteration(1), HeronAlgorithm(StopAfte
 nothing # hide
 ```
 
-Every solve has a name, which is the `name` keyword of [`solve`](@ref) and [`solve!`](@ref), and defaults to [`algorithm_name`](@ref), the name of the type of its algorithm.
-A solve uses the entry of the current logger with its name, and makes that the current logger while it runs.
-A subproblem solved from within `step!` therefore uses the entry with its name in the logger of the outer solve, and does not see the actions of the outer solve:
+To interact with the logging system, every solve can be given a name, which is the `name` keyword of [`solve`](@ref) and [`solve!`](@ref), and defaults to [`algorithm_name`](@ref), the name of the type of its algorithm.
+The logging system will then look up the appropriate logger for that name, such that subsolvers can be independently controlled.
 
 ```@example Heron
 logger = AlgorithmLogger(
@@ -474,7 +473,7 @@ nothing # hide
 Here the first five lines are the steps of the second square root, and the last one is the single step of the outer algorithm.
 Since both subproblems use the same algorithm, only their names tell them apart.
 Algorithms that solve subproblems should therefore document the names they use, in the same way as their custom contexts.
-A `with_algorithmlogger` scope opened inside `step!` adds to the logger of the running solve, which lets an algorithm configure the logging of its subproblems itself.
+Alternatively, a `with_algorithmlogger` scope opened inside `step!` adds to the logger of the running solve, which lets an algorithm configure the logging of its subproblems itself.
 
 ## Best practices
 
