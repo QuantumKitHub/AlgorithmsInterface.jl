@@ -78,9 +78,10 @@ nothing # hide
 
 To activate this logger, we wrap the section of code that we want to enable logging for, and map the `:PostStep` context to our action.
 This is achieved through the [`with_algorithmlogger`](@ref) function, which under the hood uses Julia's `with` function to manipulate a scoped value.
+The actions are grouped in an [`AlgorithmLogger`](@ref) for the solve they apply to, which is identified by its name, by default that of the type of its algorithm:
 
 ```@example Heron
-with_algorithmlogger(:PostStep => iter_printer) do
+with_algorithmlogger(:HeronAlgorithm => AlgorithmLogger(:PostStep => iter_printer)) do
     sqrt2 = heron_sqrt(2.0)
 end
 nothing # hide
@@ -108,7 +109,7 @@ stop_printer = CallbackAction() do problem, algorithm, state
     @printf("Stop %3d: x = %.12f\n", state.iteration, state.iterate)
 end
 
-with_algorithmlogger(:Start => start_printer, :PostStep => iter_printer, :Stop => stop_printer) do
+with_algorithmlogger(:HeronAlgorithm => AlgorithmLogger(:Start => start_printer, :PostStep => iter_printer, :Stop => stop_printer)) do
     sqrt2 = heron_sqrt(2.0)
 end
 nothing # hide
@@ -122,7 +123,7 @@ We will come back to this in the section on the [`AlgorithmLogger`](@ref sec_alg
 The `:Stop` context is where the [stopping criterion](@ref sec_stopping) has its say, and [`StopReasonAction`](@ref) is a ready-made action that prints it:
 
 ```@example Heron
-with_algorithmlogger(:Stop => StopReasonAction()) do
+with_algorithmlogger(:HeronAlgorithm => AlgorithmLogger(:Stop => StopReasonAction())) do
     heron_sqrt(2.0)
 end
 nothing # hide
@@ -147,14 +148,15 @@ show_elapsed = CallbackAction() do problem, algorithm, state
     @printf("  elapsed = %.3fs\n", dt)
 end
 
-with_algorithmlogger(
+timing = AlgorithmLogger(
     :Start => record_start,
     :PostStep => show_elapsed,
     :Stop => CallbackAction() do problem, algorithm, state
         total = time() - start_time[]
         @printf("Done after %d iterations (total %.3fs)\n", state.iteration, total)
     end,
-) do
+)
+with_algorithmlogger(:HeronAlgorithm => timing) do
     sqrt2 = heron_sqrt(2)
 end
 nothing # hide
@@ -170,7 +172,7 @@ every_two = IfAction(
     iter_printer,
 )
 
-with_algorithmlogger(:PostStep => every_two) do
+with_algorithmlogger(:HeronAlgorithm => AlgorithmLogger(:PostStep => every_two)) do
     sqrt2 = heron_sqrt(2)
 end
 nothing # hide
@@ -201,7 +203,7 @@ end
 
 history = CaptureHistory()
 
-with_algorithmlogger(:PostStep => history) do
+with_algorithmlogger(:HeronAlgorithm => AlgorithmLogger(:PostStep => history)) do
     sqrt2 = heron_sqrt(2)
 end
 
@@ -218,13 +220,14 @@ We can combine printing, timing, and storage simultaneously:
 ```@example Heron
 history2 = CaptureHistory()
 
-with_algorithmlogger(
+combined = AlgorithmLogger(
     :Start => record_start,
     :PostStep => ActionGroup(iter_printer, history2),
     :Stop => CallbackAction() do problem, algorithm, state
         @printf("Captured %d iterates in %.3fs\n", length(history2.iterates), time() - start_time[])
     end,
-) do
+)
+with_algorithmlogger(:HeronAlgorithm => combined) do
     sqrt2 = heron_sqrt(2)
 end
 nothing # hide
@@ -286,7 +289,7 @@ end
 
 stats = StatsCollector()
 
-with_algorithmlogger(:PostStep => stats) do
+with_algorithmlogger(:HeronAlgorithm => AlgorithmLogger(:PostStep => stats)) do
     sqrt2 = heron_sqrt(2.0; stopping_criterion = StopAfter(Millisecond(50)))
 end
 
@@ -327,7 +330,8 @@ function solve!(problem::Problem, algorithm::Algorithm, state::State; kwargs...)
 end
 ```
 
-The [`emit_message`](@ref) function looks up the context (e.g., `:PostStep`) in the logger's action dictionary and calls `handle_message!` on the corresponding action.
+The [`emit_message`](@ref) function looks up the context (e.g., `:PostStep`) in the logger of the running solve and calls `handle_message!` on the corresponding action.
+That logger is the entry of the enclosing logger named after the solve, as described in [Nested solves](@ref sec_nested_solves).
 
 ### Global enable/disable
 
@@ -336,7 +340,7 @@ For production runs or benchmarking, you can disable all logging globally:
 ```@example Heron
 # By default, logging is enabled:
 println("Logging enabled: ", AlgorithmsInterface.get_global_logging_state())
-with_algorithmlogger(:PostStep => iter_printer) do
+with_algorithmlogger(:HeronAlgorithm => AlgorithmLogger(:PostStep => iter_printer)) do
     heron_sqrt(2.0)
 end
 nothing # hide
@@ -347,7 +351,7 @@ nothing # hide
 previous_state = AlgorithmsInterface.set_global_logging_state!(false)
 
 # This will not log anything, even with a logger configured
-with_algorithmlogger(:PostStep => iter_printer) do
+with_algorithmlogger(:HeronAlgorithm => AlgorithmLogger(:PostStep => iter_printer)) do
     heron_sqrt(2.0)
 end
 
@@ -377,7 +381,7 @@ buggy_action = CallbackAction() do problem, algorithm, state
     @printf("Iter %d\n", state.iteration)
 end
 
-with_algorithmlogger(:PostStep => buggy_action) do
+with_algorithmlogger(:HeronAlgorithm => AlgorithmLogger(:PostStep => buggy_action)) do
     heron_sqrt(2.0)
     println("Algorithm completed despite logging error")
 end
@@ -421,13 +425,55 @@ issue_action = CallbackAction() do problem, algorithm, state
     println("⚠️  Numerical issue detected at iteration ", state.iteration)
 end
 
-with_algorithmlogger(:Restart => issue_action, :PostStep => iter_printer) do
+with_algorithmlogger(:HeronAlgorithm => AlgorithmLogger(:Restart => issue_action, :PostStep => iter_printer)) do
     sqrt2 = heron_sqrt(2.0; stopping_criterion = StopAfterIteration(30))
 end
 
 nothing # hide
 ```
 
+
+## [Nested solves](@id sec_nested_solves)
+
+An algorithm can solve subproblems by making use of other algorithms from within its `step!`.
+For example, the fourth root can be computed by taking the square root twice:
+
+```@example Heron
+struct FourthRootAlgorithm <: Algorithm
+    stopping_criterion
+    sqrt_algorithm::HeronAlgorithm
+end
+
+function AlgorithmsInterface.step!(problem::SqrtProblem, algorithm::FourthRootAlgorithm, state::DefaultState)
+    root = solve(problem, algorithm.sqrt_algorithm; name = :first_sqrt, iterate = 1.0)
+    state.iterate = solve(SqrtProblem(root), algorithm.sqrt_algorithm; name = :second_sqrt, iterate = 1.0)
+    return state
+end
+
+fourth_root = FourthRootAlgorithm(StopAfterIteration(1), HeronAlgorithm(StopAfterIteration(5)))
+nothing # hide
+```
+
+To interact with the logging system, every solve can be given a name, which is the `name` keyword of [`solve`](@ref) and [`solve!`](@ref), and defaults to [`algorithm_name`](@ref), the name of the type of its algorithm.
+The logging system will then look up the appropriate logger for that name, such that subsolvers can be independently controlled.
+
+```@example Heron
+logger = AlgorithmLogger(
+    :FourthRootAlgorithm => AlgorithmLogger(
+        :PostStep => iter_printer,
+        :second_sqrt => AlgorithmLogger(:PostStep => iter_printer),
+    ),
+)
+with_algorithmlogger(logger) do
+    solve(SqrtProblem(16.0), fourth_root; iterate = 1.0)
+end
+nothing # hide
+```
+
+Here the first five lines are the steps of the second square root, and the last one is the single step of the outer algorithm.
+Since both subproblems use the same algorithm, only their names tell them apart.
+Algorithms that solve subproblems should therefore document the names they use, in the same way as their custom contexts.
+Alternatively, a `with_algorithmlogger` scope opened inside `step!` adds to the logger of the running solve, which lets an algorithm configure the logging of its subproblems itself.
 
 ## Best practices
 
@@ -467,8 +513,9 @@ Implementing logging involves three main components:
    * Implement `handle_message!(action, problem, algorithm, state; kwargs...)`.
 
 2. **AlgorithmLogger**: Map contexts (`:Start`, `:PostStep`, etc.) to actions.
-   * Construct with `with_algorithmlogger(:Context => action, ...)`.
+   * Construct with `AlgorithmLogger(:Context => action, ...)`, and activate with `with_algorithmlogger(:Name => logger)`.
    * Use `ActionGroup` to compose multiple actions at one context.
+   * Reach subproblems by their `name` with `name => AlgorithmLogger(...)`.
 
 3. **Custom contexts**: Emit domain-specific events from algorithms.
    * Call `emit_message(problem, algorithm, state, :YourContext)`.

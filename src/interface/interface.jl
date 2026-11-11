@@ -40,57 +40,47 @@ finalize_state!(problem::Problem, algorithm::Algorithm, state::State) = state.it
 # has to be defined before used in solve but is documented alphabetically after
 
 @doc """
-    solve(problem::Problem, algorithm::Algorithm; kwargs...)
+    solve(problem::Problem, algorithm::Algorithm; name::Symbol = algorithm_name(algorithm), kwargs...)
 
 Solve the [`Problem`](@ref) using an [`Algorithm`](@ref).
 The keyword arguments `kwargs...` have to provide enough details such that
 the corresponding state initialisation [`initialize_state`](@ref)`(problem, algorithm)`
 returns a state.
 
+The solve uses the `name => logger` entry of the current logger, see [`AlgorithmLogger`](@ref).
+An algorithm that solves several subproblems with the same algorithm can give each its own name.
+
 By default this method continues to call [`solve!`](@ref).
 """
-function solve(problem::Problem, algorithm::Algorithm; kwargs...)
-    # obtain logger once to minimize overhead from accessing ScopedValue
-    # additionally handle logging initialization to enable stateful LoggingAction
-    logger = algorithm_logger()
-
-    # initialize the state and emit message
-    state = initialize_state(problem, algorithm; kwargs...)
-    emit_message(logger, problem, algorithm, state, :Start)
-
-    # main loop
-    state = solve_loop!(problem, algorithm, state)
-
-    # emit message about finished state
-    emit_message(logger, problem, algorithm, state, :Stop)
-
-    return finalize_state!(problem, algorithm, state)
+function solve(problem::Problem, algorithm::Algorithm; name::Symbol = algorithm_name(algorithm), kwargs...)
+    return @with ALGORITHM_LOGGER => get(AlgorithmLogger, ALGORITHM_LOGGER[].loggers, name) begin
+        logger = algorithm_logger()
+        state = initialize_state(problem, algorithm; kwargs...)
+        emit_message(logger, problem, algorithm, state, :Start)
+        state = solve_loop!(problem, algorithm, state)
+        emit_message(logger, problem, algorithm, state, :Stop)
+        finalize_state!(problem, algorithm, state)
+    end
 end
 
 @doc """
-    solve!(problem::Problem, algorithm::Algorithm, state::State; kwargs...)
+    solve!(problem::Problem, algorithm::Algorithm, state::State; name::Symbol = algorithm_name(algorithm), kwargs...)
 
 Solve the [`Problem`](@ref) using an [`Algorithm`](@ref), starting from a given [`State`](@ref).
 The state is modified in-place.
 
-All keyword arguments are passed to the [`initialize_state!`](@ref)`(problem, algorithm, state)` function.
+The `name` is used as in [`solve`](@ref), and all other keyword arguments are passed to the
+[`initialize_state!`](@ref)`(problem, algorithm, state)` function.
 """
-function solve!(problem::Problem, algorithm::Algorithm, state::State; kwargs...)
-    # obtain logger once to minimize overhead from accessing ScopedValue
-    # additionally handle logging initialization to enable stateful LoggingAction
-    logger = algorithm_logger()
-
-    # initialize the state and emit message
-    initialize_state!(problem, algorithm, state; kwargs...)
-    emit_message(logger, problem, algorithm, state, :Start)
-
-    # main loop
-    state = solve_loop!(problem, algorithm, state)
-
-    # emit message about finished state
-    emit_message(logger, problem, algorithm, state, :Stop)
-
-    return finalize_state!(problem, algorithm, state)
+function solve!(problem::Problem, algorithm::Algorithm, state::State; name::Symbol = algorithm_name(algorithm), kwargs...)
+    return @with ALGORITHM_LOGGER => get(AlgorithmLogger, ALGORITHM_LOGGER[].loggers, name) begin
+        logger = algorithm_logger()
+        initialize_state!(problem, algorithm, state; kwargs...)
+        emit_message(logger, problem, algorithm, state, :Start)
+        state = solve_loop!(problem, algorithm, state)
+        emit_message(logger, problem, algorithm, state, :Stop)
+        finalize_state!(problem, algorithm, state)
+    end
 end
 
 """
