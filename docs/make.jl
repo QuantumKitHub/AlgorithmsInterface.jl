@@ -36,7 +36,7 @@ run_on_CI = (get(ENV, "CI", nothing) == "true")
 # Copy and reformat changelog
 
 # (d) add contributing.md and changelog.md to the docs – and link to releases and issues
-const base_repository = "github.com/JuliaManifolds/AlgorithmsInterface.jl"
+const base_repository = "github.com/QuantumKitHub/AlgorithmsInterface.jl"
 
 function add_links(line::String, url::String = "https://$base_repository")
     # replace issues (#XXXX) -> ([#XXXX](url/issue/XXXX))
