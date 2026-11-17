@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Logging · AlgorithmsInterface.jl</title><meta name="title" content="Logging · AlgorithmsInterface.jl"/><meta property="og:title" content="Logging · AlgorithmsInterface.jl"/><meta property="twitter:title" content="Logging · AlgorithmsInterface.jl"/><meta name="description" content="Documentation for AlgorithmsInterface.jl."/><meta property="og:description" content="Documentation for AlgorithmsInterface.jl."/><meta property="twitter:description" content="Documentation for AlgorithmsInterface.jl."/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script><link href="../assets/citations.css" rel="stylesheet" type="text/css"/><link href="../assets/link-icons.css" rel="stylesheet" type="text/css"/></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">AlgorithmsInterface.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../interface/">Interface</a></li><li><a class="tocitem" href="../stopping_criterion/">Stopping criteria</a></li><li class="is-active"><a class="tocitem" href>Logging</a><ul class="internal"><li><a class="tocitem" href="#Why-separate-logging-from-algorithms?"><span>Why separate logging from algorithms?</span></a></li><li><a class="tocitem" href="#Using-the-default-logging-actions"><span>Using the default logging actions</span></a></li><li><a class="tocitem" href="#Implementing-custom-LoggingActions"><span>Implementing custom LoggingActions</span></a></li><li><a class="tocitem" href="#sec_algorithmlogger"><span>The AlgorithmLogger</span></a></li><li><a class="tocitem" href="#Adding-custom-logging-contexts"><span>Adding custom logging contexts</span></a></li><li><a class="tocitem" href="#Best-practices"><span>Best practices</span></a></li><li><a class="tocitem" href="#Summary"><span>Summary</span></a></li><li><a class="tocitem" href="#Reference-API"><span>Reference API</span></a></li><li><a class="tocitem" href="#Wrap‑up"><span>Wrap‑up</span></a></li></ul></li><li><span class="tocitem">Miscellanea</span><ul><li><a class="tocitem" href="../internals/">Internals</a></li><li><a class="tocitem" href="../notation/">Notation</a></li><li><a class="tocitem" href="../changelog/">Changelog</a></li><li><a class="tocitem" href="../references/">References</a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Logging</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Logging</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/JuliaManifolds/AlgorithmsInterface.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/JuliaManifolds/AlgorithmsInterface.jl/blob/main/docs/src/logging.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="sec_logging"><a class="docs-heading-anchor" href="#sec_logging">Logging</a><a id="sec_logging-1"></a><a class="docs-heading-anchor-permalink" href="#sec_logging" title="Permalink"></a></h1><p>In the final part of the square‑root story we augment Heron&#39;s iteration with logging functionality. For example, we might be interested in the convergence behavior throughout the iterations, timing information, or storing intermediate values for later analysis. The logging system is designed to provide full flexibility over this behavior, without polluting the core algorithm implementation. Additionally, we strive to <em>pay for what you get</em>: when no logging is configured, there is minimal overhead.</p><h2 id="Why-separate-logging-from-algorithms?"><a class="docs-heading-anchor" href="#Why-separate-logging-from-algorithms?">Why separate logging from algorithms?</a><a id="Why-separate-logging-from-algorithms?-1"></a><a class="docs-heading-anchor-permalink" href="#Why-separate-logging-from-algorithms?" title="Permalink"></a></h2><p>Decoupling logging from algorithm logic lets us:</p><ul><li>Add diagnostic output without modifying algorithm code.</li><li>Compose multiple logging behaviors (printing, storing, timing) independently.</li><li>Reuse generic logging actions across different algorithms.</li><li>Disable logging globally with zero runtime cost.</li><li>Instrument algorithms with custom events for domain-specific diagnostics.</li><li>Customize logging behavior <em>a posteriori</em>: users can add logging features to existing algorithms without modifying library code.</li></ul><p>The logging system aims to achieve these goals by separating the logging logic into two separate parts. These parts can be roughly described as <em>events</em> and <em>actions</em>, where the logging system is responsible for mapping between them. Concretely, we have:</p><ul><li><strong>When do we log?</strong> → <a href="#AlgorithmsInterface.with_algorithmlogger-Tuple{Any, Vararg{Any}}"><code>with_algorithmlogger</code></a> controls how events are mapped to actions.</li><li><strong>What happens when we log?</strong> → a <a href="#AlgorithmsInterface.LoggingAction"><code>LoggingAction</code></a> determines what to do when an event happens.</li></ul><p>This separation allows users to compose rich behaviors (printing, collecting statistics, plotting) without modifying algorithm code, and lets algorithm authors emit domain‑specific events.</p><h2 id="Using-the-default-logging-actions"><a class="docs-heading-anchor" href="#Using-the-default-logging-actions">Using the default logging actions</a><a id="Using-the-default-logging-actions-1"></a><a class="docs-heading-anchor-permalink" href="#Using-the-default-logging-actions" title="Permalink"></a></h2><p>Continuing from the <a href="../stopping_criterion/#sec_stopping">Stopping Criteria</a> page, we have our Heron&#39;s method implementation ready:</p><pre><code class="language-julia hljs">using AlgorithmsInterface
+using Printf
+
+struct SqrtProblem &lt;: Problem
+    S::Float64
+end
+
+struct HeronAlgorithm &lt;: Algorithm
+    stopping_criterion
+end
+
+mutable struct HeronState &lt;: State
+    iterate::Float64
+    iteration::Int
+    stopping_criterion_state
+end
+
+function AlgorithmsInterface.initialize_state(problem::SqrtProblem, algorithm::HeronAlgorithm; kwargs...)
+    x0 = rand()
+    stopping_criterion_state = initialize_state(problem, algorithm, algorithm.stopping_criterion)
+    return HeronState(x0, 0, stopping_criterion_state)
+end
+
+function AlgorithmsInterface.initialize_state!(problem::SqrtProblem, algorithm::HeronAlgorithm, state::HeronState; kwargs...)
+    state.iterate = rand()
+    state.iteration = 0
+    initialize_state!(problem, algorithm, algorithm.stopping_criterion, state.stopping_criterion_state)
+    return state
+end
+
+function AlgorithmsInterface.step!(problem::SqrtProblem, algorithm::HeronAlgorithm, state::HeronState)
+    S = problem.S
+    x = state.iterate
+    state.iterate = 0.5 * (x + S / x)
+    return state
+end
+
+function heron_sqrt(x; stopping_criterion = StopAfterIteration(10))
+    prob = SqrtProblem(x)
+    alg  = HeronAlgorithm(stopping_criterion)
+    return solve(prob, alg)  # allocates &amp; runs
+end</code></pre><p>It is already interesting to note that there are no further modifications necessary to start leveraging the logging system.</p><h3 id="Basic-iteration-printing"><a class="docs-heading-anchor" href="#Basic-iteration-printing">Basic iteration printing</a><a id="Basic-iteration-printing-1"></a><a class="docs-heading-anchor-permalink" href="#Basic-iteration-printing" title="Permalink"></a></h3><p>Let&#39;s start with a very basic example of logging: printing iteration information after each step. We use <a href="#AlgorithmsInterface.CallbackAction"><code>CallbackAction</code></a> to wrap a simple function that accesses the state, and prints the <code>iteration</code> as well as the <code>iterate</code>.</p><pre><code class="language-julia hljs">using Printf
+iter_printer = CallbackAction() do problem, algorithm, state
+    @printf(&quot;Iter %3d: x = %.12f\n&quot;, state.iteration, state.iterate)
+end</code></pre><p>To activate this logger, we wrap the section of code that we want to enable logging for, and map the <code>:PostStep</code> context to our action. This is achieved through the <a href="#AlgorithmsInterface.with_algorithmlogger-Tuple{Any, Vararg{Any}}"><code>with_algorithmlogger</code></a> function, which under the hood uses Julia&#39;s <code>with</code> function to manipulate a scoped value.</p><pre><code class="language-julia hljs">with_algorithmlogger(:PostStep =&gt; iter_printer) do
+    sqrt2 = heron_sqrt(2.0)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Iter   1: x = 30.680599471172
+Iter   2: x = 15.372893622839
+Iter   3: x = 7.751496373625
+Iter   4: x = 4.004755536078
+Iter   5: x = 2.252080899976
+Iter   6: x = 1.570074232260
+Iter   7: x = 1.421949676984
+Iter   8: x = 1.414234606532
+Iter   9: x = 1.414213562530
+Iter  10: x = 1.414213562373</code></pre><h3 id="Default-logging-contexts"><a class="docs-heading-anchor" href="#Default-logging-contexts">Default logging contexts</a><a id="Default-logging-contexts-1"></a><a class="docs-heading-anchor-permalink" href="#Default-logging-contexts" title="Permalink"></a></h3><p>The default <code>solve!</code> loop emits logging events at several key points during iteration:</p><table><tr><th style="text-align: right">context</th><th style="text-align: right">event</th></tr><tr><td style="text-align: right">:Start</td><td style="text-align: right">The solver will start.</td></tr><tr><td style="text-align: right">:PreStep</td><td style="text-align: right">The solver is about to take a step.</td></tr><tr><td style="text-align: right">:PostStep</td><td style="text-align: right">The solver has taken a step.</td></tr><tr><td style="text-align: right">:Stop</td><td style="text-align: right">The solver has finished.</td></tr></table><p>Any of these events can be hooked into to attach a logging action. For example, we may expand on the previous example as follows:</p><pre><code class="language-julia hljs">start_printer = CallbackAction() do problem, algorithm, state
+    @printf(&quot;Start: x = %.12f\n&quot;, state.iterate)
+end
+stop_printer = CallbackAction() do problem, algorithm, state
+    @printf(&quot;Stop %3d: x = %.12f\n&quot;, state.iteration, state.iterate)
+end
+
+with_algorithmlogger(:Start =&gt; start_printer, :PostStep =&gt; iter_printer, :Stop =&gt; stop_printer) do
+    sqrt2 = heron_sqrt(2.0)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Start: x = 0.248797086593
+Iter   1: x = 4.143738213606
+Iter   2: x = 2.313197093382
+Iter   3: x = 1.588900663472
+Iter   4: x = 1.423816297142
+Iter   5: x = 1.414245944540
+Iter   6: x = 1.414213562744
+Iter   7: x = 1.414213562373
+Iter   8: x = 1.414213562373
+Iter   9: x = 1.414213562373
+Iter  10: x = 1.414213562373
+Stop  10: x = 1.414213562373</code></pre><p>Furthermore, specific algorithms could emit events for custom contexts too. We will come back to this in the section on the <a href="#sec_algorithmlogger"><code>AlgorithmLogger</code></a> design.</p><h3 id="Timing-execution"><a class="docs-heading-anchor" href="#Timing-execution">Timing execution</a><a id="Timing-execution-1"></a><a class="docs-heading-anchor-permalink" href="#Timing-execution" title="Permalink"></a></h3><p>Let&#39;s add timing information to see how long each iteration takes:</p><pre><code class="language-julia hljs">start_time = Ref{Float64}(0.0)
+
+record_start = CallbackAction() do problem, algorithm, state
+    start_time[] = time()
+end
+
+show_elapsed = CallbackAction() do problem, algorithm, state
+    dt = time() - start_time[]
+    @printf(&quot;  elapsed = %.3fs\n&quot;, dt)
+end
+
+with_algorithmlogger(
+    :Start =&gt; record_start,
+    :PostStep =&gt; show_elapsed,
+    :Stop =&gt; CallbackAction() do problem, algorithm, state
+        total = time() - start_time[]
+        @printf(&quot;Done after %d iterations (total %.3fs)\n&quot;, state.iteration, total)
+    end,
+) do
+    sqrt2 = heron_sqrt(2)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">  elapsed = 0.041s
+  elapsed = 0.044s
+  elapsed = 0.044s
+  elapsed = 0.044s
+  elapsed = 0.044s
+  elapsed = 0.044s
+  elapsed = 0.044s
+  elapsed = 0.044s
+  elapsed = 0.044s
+  elapsed = 0.044s
+Done after 10 iterations (total 0.075s)</code></pre><h3 id="Conditional-logging"><a class="docs-heading-anchor" href="#Conditional-logging">Conditional logging</a><a id="Conditional-logging-1"></a><a class="docs-heading-anchor-permalink" href="#Conditional-logging" title="Permalink"></a></h3><p>Sometimes we only want to log at specific iterations. <a href="#AlgorithmsInterface.IfAction"><code>IfAction</code></a> wraps another action behind a predicate:</p><pre><code class="language-julia hljs">every_two = IfAction(
+    (problem, algorithm, state; kwargs...) -&gt; state.iteration % 2 == 0,
+    iter_printer,
+)
+
+with_algorithmlogger(:PostStep =&gt; every_two) do
+    sqrt2 = heron_sqrt(2)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Iter   2: x = 1.831031670041
+Iter   4: x = 1.414983506885
+Iter   6: x = 1.414213562373
+Iter   8: x = 1.414213562373
+Iter  10: x = 1.414213562373</code></pre><p>This prints only on even iterations, reducing output for long-running algorithms.</p><h3 id="Storing-intermediate-values"><a class="docs-heading-anchor" href="#Storing-intermediate-values">Storing intermediate values</a><a id="Storing-intermediate-values-1"></a><a class="docs-heading-anchor-permalink" href="#Storing-intermediate-values" title="Permalink"></a></h3><p>Instead of just printing, we can capture the entire trajectory for later analysis:</p><pre><code class="language-julia hljs">struct CaptureHistory &lt;: LoggingAction
+    iterates::Vector{Float64}
+end
+CaptureHistory() = CaptureHistory(Float64[])
+
+function AlgorithmsInterface.handle_message!(
+        action::CaptureHistory,
+        problem::SqrtProblem,
+        algorithm::HeronAlgorithm,
+        state::HeronState;
+        kwargs...
+)
+    push!(action.iterates, state.iterate)
+    return nothing
+end
+
+history = CaptureHistory()
+
+with_algorithmlogger(:PostStep =&gt; history) do
+    sqrt2 = heron_sqrt(2)
+end
+
+println(&quot;Stored &quot;, length(history.iterates), &quot; iterates&quot;)
+println(&quot;First few values: &quot;, history.iterates[1:min(3, end)])</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Stored 10 iterates
+First few values: [1.781634242208005, 1.452099552878936, 1.4147077944227375]</code></pre><p>You can later analyze convergence rates, plot trajectories, or export data—all without modifying the algorithm.</p><h3 id="Combining-multiple-logging-behaviors"><a class="docs-heading-anchor" href="#Combining-multiple-logging-behaviors">Combining multiple logging behaviors</a><a id="Combining-multiple-logging-behaviors-1"></a><a class="docs-heading-anchor-permalink" href="#Combining-multiple-logging-behaviors" title="Permalink"></a></h3><p>We can combine printing, timing, and storage simultaneously:</p><pre><code class="language-julia hljs">history2 = CaptureHistory()
+
+with_algorithmlogger(
+    :Start =&gt; record_start,
+    :PostStep =&gt; ActionGroup(iter_printer, history2),
+    :Stop =&gt; CallbackAction() do problem, algorithm, state
+        @printf(&quot;Captured %d iterates in %.3fs\n&quot;, length(history2.iterates), time() - start_time[])
+    end,
+) do
+    sqrt2 = heron_sqrt(2)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Iter   1: x = 1.701051789124
+Iter   2: x = 1.438397472837
+Iter   3: x = 1.414416865541
+Iter   4: x = 1.414213576984
+Iter   5: x = 1.414213562373
+Iter   6: x = 1.414213562373
+Iter   7: x = 1.414213562373
+Iter   8: x = 1.414213562373
+Iter   9: x = 1.414213562373
+Iter  10: x = 1.414213562373
+Captured 10 iterates in 0.034s</code></pre><h2 id="Implementing-custom-LoggingActions"><a class="docs-heading-anchor" href="#Implementing-custom-LoggingActions">Implementing custom LoggingActions</a><a id="Implementing-custom-LoggingActions-1"></a><a class="docs-heading-anchor-permalink" href="#Implementing-custom-LoggingActions" title="Permalink"></a></h2><p>While <a href="#AlgorithmsInterface.CallbackAction"><code>CallbackAction</code></a> is convenient for quick instrumentation, custom types give more control and possibly better performance. Let&#39;s implement a more sophisticated example: tracking iteration statistics.</p><h3 id="The-required-interface"><a class="docs-heading-anchor" href="#The-required-interface">The required interface</a><a id="The-required-interface-1"></a><a class="docs-heading-anchor-permalink" href="#The-required-interface" title="Permalink"></a></h3><p>To implement a custom <a href="#AlgorithmsInterface.LoggingAction"><code>LoggingAction</code></a>, you need:</p><ol><li>A concrete subtype of <code>LoggingAction</code>.</li><li>An implementation of <a href="#AlgorithmsInterface.handle_message!-Tuple{LoggingAction, Problem, Algorithm, State}"><code>AlgorithmsInterface.handle_message!</code></a> that defines the behavior.</li></ol><p>The signature of <code>handle_message!</code> is:</p><pre><code class="language-julia hljs">function handle_message!(
+        action::YourAction, problem::Problem, algorithm::Algorithm, state::State; kwargs...
+)
+    # Your logging logic here
+    return nothing
+end</code></pre><p>The <code>kwargs...</code> can contain context-specific information, though the default contexts don&#39;t currently pass additional data.</p><h3 id="Example:-Statistics-collector"><a class="docs-heading-anchor" href="#Example:-Statistics-collector">Example: Statistics collector</a><a id="Example:-Statistics-collector-1"></a><a class="docs-heading-anchor-permalink" href="#Example:-Statistics-collector" title="Permalink"></a></h3><p>Let&#39;s build an action that tracks statistics across iterations:</p><pre><code class="language-julia hljs">mutable struct StatsCollector &lt;: LoggingAction
+    count::Int              # aggregate number of evaluations
+    sum::Float64            # sum of all intermediate values
+    sum_squares::Float64    # square sum of all intermediate values
+end
+StatsCollector() = StatsCollector(0, 0.0, 0.0)
+
+function AlgorithmsInterface.handle_message!(
+        action::StatsCollector, problem::SqrtProblem, algorithm::HeronAlgorithm, state::HeronState;
+        kwargs...
+)
+    action.count += 1
+    action.sum += state.iterate
+    action.sum_squares += state.iterate^2
+    return nothing
+end
+
+function compute_stats(stats::StatsCollector)
+    n = stats.count
+    mean = stats.sum / n
+    variance = (stats.sum_squares / n) - mean^2
+    return (mean=mean, variance=variance, count=n)
+end
+
+stats = StatsCollector()
+
+with_algorithmlogger(:PostStep =&gt; stats) do
+    sqrt2 = heron_sqrt(2.0; stopping_criterion = StopAfter(Millisecond(50)))
+end
+
+result = compute_stats(stats)
+println(&quot;Collected $(result.count) samples&quot;)
+println(&quot;Mean iterate: $(result.mean)&quot;)
+println(&quot;Variance: $(result.variance)&quot;)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Collected 78046 samples
+Mean iterate: 1.4142440587651384
+Variance: 4.5113509438365895e-5</code></pre><p>This pattern of collecting data during iteration and post-processing afterward is efficient and keeps the hot loop fast.</p><h2 id="sec_algorithmlogger"><a class="docs-heading-anchor" href="#sec_algorithmlogger">The AlgorithmLogger</a><a id="sec_algorithmlogger-1"></a><a class="docs-heading-anchor-permalink" href="#sec_algorithmlogger" title="Permalink"></a></h2><p>The <a href="#AlgorithmsInterface.AlgorithmLogger"><code>AlgorithmsInterface.AlgorithmLogger</code></a> is the dispatcher that routes logging events to actions. Understanding its design helps when adding custom logging contexts.</p><h3 id="How-logging-events-are-emitted"><a class="docs-heading-anchor" href="#How-logging-events-are-emitted">How logging events are emitted</a><a id="How-logging-events-are-emitted-1"></a><a class="docs-heading-anchor-permalink" href="#How-logging-events-are-emitted" title="Permalink"></a></h3><p>Inside the <code>solve!</code> function, logging events are emitted at key points:</p><pre><code class="language-julia hljs">function solve!(problem::Problem, algorithm::Algorithm, state::State; kwargs...)
+    initialize_state!(problem, algorithm, state; kwargs...)
+    emit_message(problem, algorithm, state, :Start)
+
+    while !is_finished!(problem, algorithm, state)
+        emit_message(problem, algorithm, state, :PreStep)
+
+        increment!(state)
+        step!(problem, algorithm, state)
+
+        emit_message(problem, algorithm, state, :PostStep)
+    end
+
+    emit_message(problem, algorithm, state, :Stop)
+
+    return finalize_state!(problem, algorithm, state)
+end</code></pre><p>The <a href="#AlgorithmsInterface.emit_message-Tuple{Problem, Algorithm, State, Symbol}"><code>emit_message</code></a> function looks up the context (e.g., <code>:PostStep</code>) in the logger&#39;s action dictionary and calls <code>handle_message!</code> on the corresponding action.</p><h3 id="Global-enable/disable"><a class="docs-heading-anchor" href="#Global-enable/disable">Global enable/disable</a><a id="Global-enable/disable-1"></a><a class="docs-heading-anchor-permalink" href="#Global-enable/disable" title="Permalink"></a></h3><p>For production runs or benchmarking, you can disable all logging globally:</p><pre><code class="language-julia hljs"># By default, logging is enabled:
+println(&quot;Logging enabled: &quot;, AlgorithmsInterface.get_global_logging_state())
+with_algorithmlogger(:PostStep =&gt; iter_printer) do
+    heron_sqrt(2.0)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Logging enabled: true
+Iter   1: x = 2.633230493422
+Iter   2: x = 1.696376913036
+Iter   3: x = 1.437680091493
+Iter   4: x = 1.414405078550
+Iter   5: x = 1.414213575339
+Iter   6: x = 1.414213562373
+Iter   7: x = 1.414213562373
+Iter   8: x = 1.414213562373
+Iter   9: x = 1.414213562373
+Iter  10: x = 1.414213562373</code></pre><pre><code class="language-julia hljs"># But, logging can also be disabled:
+previous_state = AlgorithmsInterface.set_global_logging_state!(false)
+
+# This will not log anything, even with a logger configured
+with_algorithmlogger(:PostStep =&gt; iter_printer) do
+    heron_sqrt(2.0)
+end
+
+# Restore previous state
+AlgorithmsInterface.set_global_logging_state!(previous_state)</code></pre><p>This works since the default implementation of <a href="#AlgorithmsInterface.emit_message-Tuple{Problem, Algorithm, State, Symbol}"><code>emit_message</code></a> first retrieves the current logger through <a href="#AlgorithmsInterface.algorithm_logger"><code>AlgorithmsInterface.algorithm_logger</code></a>:</p><pre><code class="language-julia hljs">emit_message(problem, algorithm, state, context; kwargs...) =
+    emit_message(algorithm_logger(), problem, algorithm, state, context; kwargs...)</code></pre><p>When logging is disabled globally, <a href="#AlgorithmsInterface.algorithm_logger"><code>algorithm_logger</code></a> returns <code>nothing</code>, and <code>emit_message</code> becomes a no-op with minimal overhead.</p><h3 id="Error-isolation"><a class="docs-heading-anchor" href="#Error-isolation">Error isolation</a><a id="Error-isolation-1"></a><a class="docs-heading-anchor-permalink" href="#Error-isolation" title="Permalink"></a></h3><p>If a <code>LoggingAction</code> throws an exception, the logging system catches it and reports an error without aborting the algorithm:</p><pre><code class="language-julia hljs">buggy_action = CallbackAction() do problem, algorithm, state
+    if state.iteration == 3
+        error(&quot;Intentional logging error at iteration 3&quot;)
+    end
+    @printf(&quot;Iter %d\n&quot;, state.iteration)
+end
+
+with_algorithmlogger(:PostStep =&gt; buggy_action) do
+    heron_sqrt(2.0)
+    println(&quot;Algorithm completed despite logging error&quot;)
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Iter 1
+Iter 2
+┌ Error: Error during the handling of a logging action
+│   action = CallbackAction{Main.var&quot;#59#60&quot;}(Main.var&quot;#59#60&quot;())
+│   exception =
+│    Intentional logging error at iteration 3
+│    Stacktrace:
+│      [1] error(s::String)
+│        @ Base ./error.jl:44
+│      [2] (::Main.var&quot;#59#60&quot;)(problem::Main.SqrtProblem, algorithm::Main.HeronAlgorithm, state::Main.HeronState)
+│        @ Main ./logging.md:380
+│      [3] #handle_message!#17
+│        @ ~/work/AlgorithmsInterface.jl/AlgorithmsInterface.jl/src/logging.jl:60 [inlined]
+│      [4] handle_message!(action::CallbackAction{Main.var&quot;#59#60&quot;}, problem::Main.SqrtProblem, algorithm::Main.HeronAlgorithm, state::Main.HeronState)
+│        @ AlgorithmsInterface ~/work/AlgorithmsInterface.jl/AlgorithmsInterface.jl/src/logging.jl:57
+│      [5] emit_message(logger::AlgorithmsInterface.AlgorithmLogger, problem::Problem, algorithm::Algorithm, state::State, context::Symbol; kwargs...)
+│        @ AlgorithmsInterface ~/work/AlgorithmsInterface.jl/AlgorithmsInterface.jl/src/logging.jl:188
+│      [6] emit_message(logger::AlgorithmsInterface.AlgorithmLogger, problem::Problem, algorithm::Algorithm, state::State, context::Symbol)
+│        @ AlgorithmsInterface ~/work/AlgorithmsInterface.jl/AlgorithmsInterface.jl/src/logging.jl:178
+│      [7] solve_loop!(problem::Main.SqrtProblem, algorithm::Main.HeronAlgorithm, state::Main.HeronState)
+│        @ AlgorithmsInterface ~/work/AlgorithmsInterface.jl/AlgorithmsInterface.jl/src/interface/interface.jl:102
+│      [8] solve(problem::Main.SqrtProblem, algorithm::Main.HeronAlgorithm; kwargs::@Kwargs{})
+│        @ AlgorithmsInterface ~/work/AlgorithmsInterface.jl/AlgorithmsInterface.jl/src/interface/interface.jl:51
+│      [9] solve
+│        @ ~/work/AlgorithmsInterface.jl/AlgorithmsInterface.jl/src/interface/interface.jl:41 [inlined]
+│     [10] #heron_sqrt#3
+│        @ ./logging.md:78 [inlined]
+│     [11] heron_sqrt
+│        @ ./logging.md:75 [inlined]
+│     [12] #62
+│        @ ./logging.md:386 [inlined]
+│     [13] with(::Main.var&quot;#62#63&quot;, ::Pair{Base.ScopedValues.ScopedValue{AlgorithmsInterface.AlgorithmLogger}, AlgorithmsInterface.AlgorithmLogger})
+│        @ Base.ScopedValues ./scopedvalues.jl:269
+│     [14] with_algorithmlogger(f::Function, args::Pair{Symbol, CallbackAction{Main.var&quot;#59#60&quot;}})
+│        @ AlgorithmsInterface ~/work/AlgorithmsInterface.jl/AlgorithmsInterface.jl/src/logging.jl:126
+│     [15] top-level scope
+│        @ logging.md:385
+│     [16] eval(m::Module, e::Any)
+│        @ Core ./boot.jl:489
+│     [17] #61
+│        @ ~/.julia/packages/Documenter/AXNMp/src/expander_pipeline.jl:879 [inlined]
+│     [18] cd(f::Documenter.var&quot;#61#62&quot;{Module, Expr}, dir::String)
+│        @ Base.Filesystem ./file.jl:112
+│     [19] (::Documenter.var&quot;#59#60&quot;{Documenter.Page, Module, Expr})()
+│        @ Documenter ~/.julia/packages/Documenter/AXNMp/src/expander_pipeline.jl:878
+│     [20] (::IOCapture.var&quot;#12#13&quot;{Type{InterruptException}, Documenter.var&quot;#59#60&quot;{Documenter.Page, Module, Expr}, IOContext{Base.PipeEndpoint}, IOContext{Base.PipeEndpoint}, Base.PipeEndpoint, Base.PipeEndpoint})()
+│        @ IOCapture ~/.julia/packages/IOCapture/MR051/src/IOCapture.jl:170
+│     [21] with_logstate(f::IOCapture.var&quot;#12#13&quot;{Type{InterruptException}, Documenter.var&quot;#59#60&quot;{Documenter.Page, Module, Expr}, IOContext{Base.PipeEndpoint}, IOContext{Base.PipeEndpoint}, Base.PipeEndpoint, Base.PipeEndpoint}, logstate::Base.CoreLogging.LogState)
+│        @ Base.CoreLogging ./logging/logging.jl:542
+│     [22] with_logger(f::Function, logger::Base.CoreLogging.ConsoleLogger)
+│        @ Base.CoreLogging ./logging/logging.jl:653
+│     [23] capture(f::Documenter.var&quot;#59#60&quot;{Documenter.Page, Module, Expr}; rethrow::Type, color::Bool, passthrough::Bool, capture_buffer::IOBuffer, io_context::Vector{Any})
+│        @ IOCapture ~/.julia/packages/IOCapture/MR051/src/IOCapture.jl:167
+│     [24] runner(::Type{Documenter.Expanders.ExampleBlocks}, node::MarkdownAST.Node{Nothing}, page::Documenter.Page, doc::Documenter.Document)
+│        @ Documenter ~/.julia/packages/Documenter/AXNMp/src/expander_pipeline.jl:877
+│     [25] dispatch(::Type{Documenter.Expanders.ExpanderPipeline}, ::MarkdownAST.Node{Nothing}, ::Vararg{Any})
+│        @ Documenter.Selectors ~/.julia/packages/Documenter/AXNMp/src/utilities/Selectors.jl:170
+│     [26] expand(doc::Documenter.Document)
+│        @ Documenter ~/.julia/packages/Documenter/AXNMp/src/expander_pipeline.jl:60
+│     [27] runner(::Type{Documenter.Builder.ExpandTemplates}, doc::Documenter.Document)
+│        @ Documenter ~/.julia/packages/Documenter/AXNMp/src/builder_pipeline.jl:224
+│     [28] dispatch(::Type{Documenter.Builder.DocumentPipeline}, x::Documenter.Document)
+│        @ Documenter.Selectors ~/.julia/packages/Documenter/AXNMp/src/utilities/Selectors.jl:170
+│     [29] #95
+│        @ ~/.julia/packages/Documenter/AXNMp/src/makedocs.jl:283 [inlined]
+│     [30] withenv(::Documenter.var&quot;#95#96&quot;{Documenter.Document}, ::Pair{String, Nothing}, ::Vararg{Pair{String, Nothing}})
+│        @ Base ./env.jl:265
+│     [31] #93
+│        @ ~/.julia/packages/Documenter/AXNMp/src/makedocs.jl:282 [inlined]
+│     [32] cd(f::Documenter.var&quot;#93#94&quot;{Documenter.Document}, dir::String)
+│        @ Base.Filesystem ./file.jl:112
+│     [33] makedocs(; debug::Bool, format::Documenter.HTMLWriter.HTML, kwargs::@Kwargs{modules::Vector{Module}, authors::String, sitename::String, pages::Vector{Pair{String, Any}}, expandfirst::Vector{String}, plugins::Vector{Documenter.Plugin}})
+│        @ Documenter ~/.julia/packages/Documenter/AXNMp/src/makedocs.jl:281
+│     [34] top-level scope
+│        @ ~/work/AlgorithmsInterface.jl/AlgorithmsInterface.jl/docs/make.jl:79
+│     [35] include(mod::Module, _path::String)
+│        @ Base ./Base.jl:306
+│     [36] exec_options(opts::Base.JLOptions)
+│        @ Base ./client.jl:317
+│     [37] _start()
+│        @ Base ./client.jl:550
+└ @ AlgorithmsInterface ~/work/AlgorithmsInterface.jl/AlgorithmsInterface.jl/src/logging.jl:191
+Iter 4
+Iter 5
+Iter 6
+Iter 7
+Iter 8
+Iter 9
+Iter 10
+Algorithm completed despite logging error</code></pre><p>This robustness ensures that bugs in logging code don&#39;t compromise the algorithm&#39;s correctness.</p><h2 id="Adding-custom-logging-contexts"><a class="docs-heading-anchor" href="#Adding-custom-logging-contexts">Adding custom logging contexts</a><a id="Adding-custom-logging-contexts-1"></a><a class="docs-heading-anchor-permalink" href="#Adding-custom-logging-contexts" title="Permalink"></a></h2><p>Algorithms can emit custom logging events for domain-specific scenarios. For example, adaptive algorithms might emit events when step sizes are reduced, or when steps are rejected. Here we will illustrate this by a slight adaptation of our algorithm, which could restart if convergence wasn&#39;t reached after 10 iterations.</p><h3 id="Emitting-custom-events"><a class="docs-heading-anchor" href="#Emitting-custom-events">Emitting custom events</a><a id="Emitting-custom-events-1"></a><a class="docs-heading-anchor-permalink" href="#Emitting-custom-events" title="Permalink"></a></h3><p>To emit a custom logging event from within your algorithm, call <a href="#AlgorithmsInterface.emit_message-Tuple{Problem, Algorithm, State, Symbol}"><code>emit_message</code></a>:</p><pre><code class="language-julia hljs">function AlgorithmsInterface.step!(problem::SqrtProblem, algorithm::HeronAlgorithm, state::HeronState)
+    # Suppose we check for numerical issues
+    if !isfinite(state.iterate) || mod(state.iteration, 10) == 0
+        emit_message(problem, algorithm, state, :Restart)
+        state.iterate = rand()  # Reset the iterate and try again
+    end
+
+    # Normal step
+    S = problem.S
+    x = state.iterate
+    state.iterate = 0.5 * (x + S / x)
+    return state
+end</code></pre><p>Now users can attach actions to the <code>:Restart</code> context:</p><pre><code class="language-julia hljs">issue_counter = Ref(0)
+issue_action = CallbackAction() do problem, algorithm, state
+    issue_counter[] += 1
+    println(&quot;⚠️  Numerical issue detected at iteration &quot;, state.iteration)
+end
+
+with_algorithmlogger(:Restart =&gt; issue_action, :PostStep =&gt; iter_printer) do
+    sqrt2 = heron_sqrt(2.0; stopping_criterion = StopAfterIteration(30))
+end</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Iter   1: x = 2.123573102761
+Iter   2: x = 1.532690990083
+Iter   3: x = 1.418792730962
+Iter   4: x = 1.414220952031
+Iter   5: x = 1.414213562392
+Iter   6: x = 1.414213562373
+Iter   7: x = 1.414213562373
+Iter   8: x = 1.414213562373
+Iter   9: x = 1.414213562373
+⚠️  Numerical issue detected at iteration 10
+Iter  10: x = 4.598973612287
+Iter  11: x = 2.516926627352
+Iter  12: x = 1.655773266669
+Iter  13: x = 1.431834057858
+Iter  14: x = 1.414321983408
+Iter  15: x = 1.414213566529
+Iter  16: x = 1.414213562373
+Iter  17: x = 1.414213562373
+Iter  18: x = 1.414213562373
+Iter  19: x = 1.414213562373
+⚠️  Numerical issue detected at iteration 20
+Iter  20: x = 5.615924379750
+Iter  21: x = 2.986027265609
+Iter  22: x = 1.827906757029
+Iter  23: x = 1.461027235622
+Iter  24: x = 1.414963555238
+Iter  25: x = 1.414213761138
+Iter  26: x = 1.414213562373
+Iter  27: x = 1.414213562373
+Iter  28: x = 1.414213562373
+Iter  29: x = 1.414213562373
+⚠️  Numerical issue detected at iteration 30
+Iter  30: x = 4.143636818530</code></pre><h2 id="Best-practices"><a class="docs-heading-anchor" href="#Best-practices">Best practices</a><a id="Best-practices-1"></a><a class="docs-heading-anchor-permalink" href="#Best-practices" title="Permalink"></a></h2><h3 id="Performance-considerations"><a class="docs-heading-anchor" href="#Performance-considerations">Performance considerations</a><a id="Performance-considerations-1"></a><a class="docs-heading-anchor-permalink" href="#Performance-considerations" title="Permalink"></a></h3><ul><li>Logging actions can be as fast or slow as needed; the overhead is only incurred when they are actually used.</li><li>Algorithms should be mindful of emitting events in hot loops. These events incur an overhead similar to accessing a <code>ScopedValue</code> (~10-100 ns), even when no logging action is registered.</li><li>For expensive operations (plotting, I/O), it is often better to collect data during iteration and process afterward.</li><li>Use <code>set_global_logging_state!(false)</code> for production benchmarks.</li></ul><h3 id="Guidelines-for-custom-actions"><a class="docs-heading-anchor" href="#Guidelines-for-custom-actions">Guidelines for custom actions</a><a id="Guidelines-for-custom-actions-1"></a><a class="docs-heading-anchor-permalink" href="#Guidelines-for-custom-actions" title="Permalink"></a></h3><p>When designing custom logging actions for your algorithms:</p><ul><li>It is good practice to avoid <strong>modifying</strong> the algorithm state, as this might leave the algorithm in an invalid state to continue running.</li><li>The logging state and global state can be mutated as you see fit, but be mindful of properly initializing and resetting the state if so desired.</li><li>If you need to influence the algorithm, use stopping criteria or modify the algorithm itself.</li><li>For generic and reusable actions, document which properties they access from the <code>problem, algorithm, state</code> triplet, and be prepared to handle cases where these aren&#39;t present.</li></ul><h3 id="Guidelines-for-custom-contexts"><a class="docs-heading-anchor" href="#Guidelines-for-custom-contexts">Guidelines for custom contexts</a><a id="Guidelines-for-custom-contexts-1"></a><a class="docs-heading-anchor-permalink" href="#Guidelines-for-custom-contexts" title="Permalink"></a></h3><p>When designing custom logging contexts for your algorithms:</p><ul><li>Use descriptive symbol names (<code>:LineSearchFailed</code>, <code>:StepRejected</code>, <code>:Refined</code>).</li><li>Document which contexts your algorithm emits and when.</li><li>Keep context-specific data in <code>kwargs...</code> if needed (though the default contexts don&#39;t use this).</li><li>Emit events at meaningful decision points, not in tight inner loops.</li></ul><h2 id="Summary"><a class="docs-heading-anchor" href="#Summary">Summary</a><a id="Summary-1"></a><a class="docs-heading-anchor-permalink" href="#Summary" title="Permalink"></a></h2><p>Implementing logging involves three main components:</p><ol><li><p><strong>LoggingAction</strong>: Define what happens when a logging event occurs.</p><ul><li>Use <code>CallbackAction</code> for quick inline functions.</li><li>Implement custom subtypes for reusable, stateful logging.</li><li>Implement <code>handle_message!(action, problem, algorithm, state; kwargs...)</code>.</li></ul></li><li><p><strong>AlgorithmLogger</strong>: Map contexts (<code>:Start</code>, <code>:PostStep</code>, etc.) to actions.</p><ul><li>Construct with <code>with_algorithmlogger(:Context =&gt; action, ...)</code>.</li><li>Use <code>ActionGroup</code> to compose multiple actions at one context.</li></ul></li><li><p><strong>Custom contexts</strong>: Emit domain-specific events from algorithms.</p><ul><li>Call <code>emit_message(problem, algorithm, state, :YourContext)</code>.</li><li>Document custom contexts in your algorithm&#39;s documentation.</li><li>Use descriptive symbol names.</li></ul></li></ol><p>The logging system is designed for composability and zero-overhead when disabled, letting you instrument algorithms without compromising performance or code clarity.</p><h2 id="Reference-API"><a class="docs-heading-anchor" href="#Reference-API">Reference API</a><a id="Reference-API-1"></a><a class="docs-heading-anchor-permalink" href="#Reference-API" title="Permalink"></a></h2><p>Auto‑generated documentation for logging infrastructure follows.</p><article><details class="docstring"><summary id="AlgorithmsInterface.ActionGroup"><a class="docstring-binding" href="#AlgorithmsInterface.ActionGroup"><code>AlgorithmsInterface.ActionGroup</code></a> — <span class="docstring-category">Type</span></summary><section><div><pre><code class="language-julia hljs">ActionGroup(actions::LoggingAction...)
+ActionGroup(actions::Vector{&lt;:LoggingAction})</code></pre><p>Concrete <a href="#AlgorithmsInterface.LoggingAction"><code>LoggingAction</code></a> that can be used to sequentially perform each of the <code>actions</code>.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaManifolds/AlgorithmsInterface.jl/blob/68a96f51c2c521af47d4a27dd7222b50b6c573f2/src/logging.jl#L23-L28">source</a></section></details></article><article><details class="docstring"><summary id="AlgorithmsInterface.AlgorithmLogger"><a class="docstring-binding" href="#AlgorithmsInterface.AlgorithmLogger"><code>AlgorithmsInterface.AlgorithmLogger</code></a> — <span class="docstring-category">Type</span></summary><section><div><pre><code class="language-julia hljs">AlgorithmLogger(context =&gt; action, ...) -&gt; logger</code></pre><p>Logging transformer that handles the logic of dispatching logging events to logging actions. This is implemented through <code>logger[context]</code>.</p><p>See also the scoped value <a href="#AlgorithmsInterface.algorithm_logger"><code>AlgorithmsInterface.algorithm_logger</code></a>.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaManifolds/AlgorithmsInterface.jl/blob/68a96f51c2c521af47d4a27dd7222b50b6c573f2/src/logging.jl#L89-L96">source</a></section></details></article><article><details class="docstring"><summary id="AlgorithmsInterface.CallbackAction"><a class="docstring-binding" href="#AlgorithmsInterface.CallbackAction"><code>AlgorithmsInterface.CallbackAction</code></a> — <span class="docstring-category">Type</span></summary><section><div><pre><code class="language-julia hljs">CallbackAction(callback)</code></pre><p>Concrete <a href="#AlgorithmsInterface.LoggingAction"><code>LoggingAction</code></a> that handles a logging event through an arbitrary callback function. The callback function must have the following signature:</p><pre><code class="language-julia hljs">callback(problem, algorithm, state; kwargs...) = ...</code></pre><p>Here <code>kwargs...</code> are optional and can be filled out with context-specific information.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaManifolds/AlgorithmsInterface.jl/blob/68a96f51c2c521af47d4a27dd7222b50b6c573f2/src/logging.jl#L43-L52">source</a></section></details></article><article><details class="docstring"><summary id="AlgorithmsInterface.IfAction"><a class="docstring-binding" href="#AlgorithmsInterface.IfAction"><code>AlgorithmsInterface.IfAction</code></a> — <span class="docstring-category">Type</span></summary><section><div><pre><code class="language-julia hljs">IfAction(predicate, action)</code></pre><p>Concrete <a href="#AlgorithmsInterface.LoggingAction"><code>LoggingAction</code></a> that wraps another action and hides it behind a clause, only emitting logging events whenever the <code>predicate</code> evaluates to true. The <code>predicate</code> must have the signature:</p><pre><code class="language-julia hljs">predicate(problem, algorithm, state; kwargs...)::Bool</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaManifolds/AlgorithmsInterface.jl/blob/68a96f51c2c521af47d4a27dd7222b50b6c573f2/src/logging.jl#L64-L73">source</a></section></details></article><article><details class="docstring"><summary id="AlgorithmsInterface.LoggingAction"><a class="docstring-binding" href="#AlgorithmsInterface.LoggingAction"><code>AlgorithmsInterface.LoggingAction</code></a> — <span class="docstring-category">Type</span></summary><section><div><pre><code class="language-julia hljs">LoggingAction</code></pre><p>Abstract supertype for defining an action that generates a log record.</p><p><strong>Methods</strong></p><p>Any concrete subtype should at least implement the following method to handle the logging event:</p><ul><li><a href="#AlgorithmsInterface.handle_message!-Tuple{LoggingAction, Problem, Algorithm, State}"><code>handle_message!(action, problem, algorithm, state, args...; kwargs...)</code></a></li></ul></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaManifolds/AlgorithmsInterface.jl/blob/68a96f51c2c521af47d4a27dd7222b50b6c573f2/src/logging.jl#L3-L12">source</a></section></details></article><article><details class="docstring"><summary id="AlgorithmsInterface.algorithm_logger"><a class="docstring-binding" href="#AlgorithmsInterface.algorithm_logger"><code>AlgorithmsInterface.algorithm_logger</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">algorithm_logger()::Union{AlgorithmLogger, Nothing}</code></pre><p>Retrieve the current logger that is responsible for handling logging events. The current logger is determined by a <code>ScopedValue</code>. Whenever <code>nothing</code> is returned, no logging should happen.</p><p>See also <a href="#AlgorithmsInterface.set_global_logging_state!"><code>set_global_logging_state!</code></a> for globally toggling whether logging should happen.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaManifolds/AlgorithmsInterface.jl/blob/68a96f51c2c521af47d4a27dd7222b50b6c573f2/src/logging.jl#L145-L153">source</a></section></details></article><article><details class="docstring"><summary id="AlgorithmsInterface.emit_message-Tuple{Problem, Algorithm, State, Symbol}"><a class="docstring-binding" href="#AlgorithmsInterface.emit_message-Tuple{Problem, Algorithm, State, Symbol}"><code>AlgorithmsInterface.emit_message</code></a> — <span class="docstring-category">Method</span></summary><section><div><pre><code class="language-julia hljs">emit_message(problem::Problem, algorithm::Algorithm, state::State, context::Symbol; kwargs...) -&gt; nothing
+emit_message(algorithm_logger, problem::Problem, algorithm::Algorithm, state::State, context::Symbol; kwargs...) -&gt; nothing</code></pre><p>Use the current or the provided algorithm logger to handle the logging event of the given <code>context</code>. The first signature should be favored as it correctly handles accessing the <code>logger</code> and respecting global toggles for enabling and disabling the logging system.</p><p>The second signature should be used exclusively in (very) hot loops, where the overhead of <a href="#AlgorithmsInterface.algorithm_logger"><code>AlgorithmsInterface.algorithm_logger()</code></a> is too large. In this case, you can manually extract the <code>algorithm_logger()</code> once outside of the hot loop.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaManifolds/AlgorithmsInterface.jl/blob/68a96f51c2c521af47d4a27dd7222b50b6c573f2/src/logging.jl#L164-L173">source</a></section></details></article><article><details class="docstring"><summary id="AlgorithmsInterface.get_global_logging_state"><a class="docstring-binding" href="#AlgorithmsInterface.get_global_logging_state"><code>AlgorithmsInterface.get_global_logging_state</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">get_global_logging_state()
+set_global_logging_state!(state::Bool) -&gt; previous_state</code></pre><p>Retrieve or set the value to globally enable or disable the handling of logging events.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaManifolds/AlgorithmsInterface.jl/blob/68a96f51c2c521af47d4a27dd7222b50b6c573f2/src/logging.jl#L129-L134">source</a></section></details></article><article><details class="docstring"><summary id="AlgorithmsInterface.handle_message!-Tuple{LoggingAction, Problem, Algorithm, State}"><a class="docstring-binding" href="#AlgorithmsInterface.handle_message!-Tuple{LoggingAction, Problem, Algorithm, State}"><code>AlgorithmsInterface.handle_message!</code></a> — <span class="docstring-category">Method</span></summary><section><div><pre><code class="language-julia hljs">handle_message!(action::LoggingAction, problem::Problem, algorithm::Algorithm, state::State; kwargs...)</code></pre><p>Entry-point for defining an implementation of how to handle a logging event for a given <a href="#AlgorithmsInterface.LoggingAction"><code>LoggingAction</code></a>.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaManifolds/AlgorithmsInterface.jl/blob/68a96f51c2c521af47d4a27dd7222b50b6c573f2/src/logging.jl#L15-L19">source</a></section></details></article><article><details class="docstring"><summary id="AlgorithmsInterface.set_global_logging_state!"><a class="docstring-binding" href="#AlgorithmsInterface.set_global_logging_state!"><code>AlgorithmsInterface.set_global_logging_state!</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">get_global_logging_state()
+set_global_logging_state!(state::Bool) -&gt; previous_state</code></pre><p>Retrieve or set the value to globally enable or disable the handling of logging events.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaManifolds/AlgorithmsInterface.jl/blob/68a96f51c2c521af47d4a27dd7222b50b6c573f2/src/logging.jl#L129-L134">source</a></section></details></article><article><details class="docstring"><summary id="AlgorithmsInterface.with_algorithmlogger-Tuple{Any, Vararg{Any}}"><a class="docstring-binding" href="#AlgorithmsInterface.with_algorithmlogger-Tuple{Any, Vararg{Any}}"><code>AlgorithmsInterface.with_algorithmlogger</code></a> — <span class="docstring-category">Method</span></summary><section><div><pre><code class="language-julia hljs">with_algorithmlogger(f, (context =&gt; action)::Pair{Symbol, LoggingAction}...)
+with_algorithmlogger((context =&gt; action)::Pair{Symbol, LoggingAction}...) do
+    # insert arbitrary code here
+end</code></pre><p>Run the given zero-argument function <code>f()</code> while mapping events of given <code>context</code>s to their respective <code>action</code>s. By default, the following events trigger a logging action with the given <code>context</code>:</p><table><tr><th style="text-align: right">context</th><th style="text-align: right">event</th></tr><tr><td style="text-align: right">:Start</td><td style="text-align: right">The solver will start.</td></tr><tr><td style="text-align: right">:PreStep</td><td style="text-align: right">The solver is about to take a step.</td></tr><tr><td style="text-align: right">:PostStep</td><td style="text-align: right">The solver has taken a step.</td></tr><tr><td style="text-align: right">:Stop</td><td style="text-align: right">The solver has finished.</td></tr></table><p>However, further events and actions can be emitted through the <a href="#AlgorithmsInterface.emit_message-Tuple{Problem, Algorithm, State, Symbol}"><code>emit_message</code></a> interface.</p><p>See also the scoped value <a href="#AlgorithmsInterface.algorithm_logger"><code>AlgorithmsInterface.algorithm_logger</code></a>.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/JuliaManifolds/AlgorithmsInterface.jl/blob/68a96f51c2c521af47d4a27dd7222b50b6c573f2/src/logging.jl#L104-L123">source</a></section></details></article><h2 id="Wrap‑up"><a class="docs-heading-anchor" href="#Wrap‑up">Wrap‑up</a><a id="Wrap‑up-1"></a><a class="docs-heading-anchor-permalink" href="#Wrap‑up" title="Permalink"></a></h2><p>You have now seen the three pillars of the AlgorithmsInterface:</p><ul><li><a href="../interface/#sec_interface"><strong>Interface</strong></a>: Defining algorithms with <code>Problem</code>, <code>Algorithm</code>, and <code>State</code>.</li><li><a href="../stopping_criterion/#sec_stopping"><strong>Stopping criteria</strong></a>: Controlling when iteration halts with composable conditions.</li><li><a href="#sec_logging"><strong>Logging</strong></a>: Instrumenting execution with flexible, composable actions.</li></ul><p>Together, these patterns encourage modular, testable, and maintainable iterative algorithm design. You can now build algorithms that are easy to configure, monitor, and extend without invasive modifications to core logic.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../stopping_criterion/">« Stopping criteria</a><a class="docs-footer-nextpage" href="../internals/">Internals »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Sunday 3 May 2026 20:17">Sunday 3 May 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body><div data-docstringscollapsed="true"></div></html>
