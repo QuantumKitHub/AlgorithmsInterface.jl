@@ -1,10 +1,10 @@
 @doc raw"""
 🧮 AlgorithmsInterface.jl: an interface for iterative algorithms in Julia
 
-* 📚 Documentation: [juliamanifolds.github.io/AlgorithmsInterface.jl/](https://juliamanifolds.github.io/AlgorithmsInterface.jl/)
-* 📦 Repository: [github.com/JuliaManifolds/AlgorithmsInterface.jl](https://github.com/JuliaManifolds/AlgorithmsInterface.jl)
-* 💬 Discussions: [github.com/JuliaManifolds/AlgorithmsInterface.jl/discussions](https://github.com/JuliaManifolds/AlgorithmsInterface.jl/discussions)
-* 🎯 Issues: [github.com/JuliaManifolds/AlgorithmsInterface.jl/issues](https://github.com/JuliaManifolds/AlgorithmsInterface.jl/issues)
+* 📚 Documentation: [QuantumKitHub.github.io/AlgorithmsInterface.jl/](https://QuantumKitHub.github.io/AlgorithmsInterface.jl/)
+* 📦 Repository: [github.com/QuantumKitHub/AlgorithmsInterface.jl](https://github.com/QuantumKitHub/AlgorithmsInterface.jl)
+* 💬 Discussions: [github.com/QuantumKitHub/AlgorithmsInterface.jl/discussions](https://github.com/QuantumKitHub/AlgorithmsInterface.jl/discussions)
+* 🎯 Issues: [github.com/QuantumKitHub/AlgorithmsInterface.jl/issues](https://github.com/QuantumKitHub/AlgorithmsInterface.jl/issues)
 """
 module AlgorithmsInterface
 
