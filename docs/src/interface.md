@@ -187,6 +187,126 @@ println("Approximate sqrt: ", solve(SqrtProblem(16.0), HeronAlgorithm(StopAfterI
 
 Note that the three required *properties* do not enforce a struct with these *fields*, and the properties can be emulated with correct implementations of `Base.getproperty`.
 
+## Tree input and display
+
+Use `@algorithm` to write nested constructor arguments as a tree. For the
+`HeronAlgorithm` defined above:
+
+```@example Heron
+limit = 8
+algorithm = @algorithm """
+HeronAlgorithm
+└─ stopping_criterion: StopAfterIteration
+   └─ max_iterations: limit
+"""
+solve(SqrtProblem(16.0), algorithm; iterate = 1.0)
+```
+
+Here `limit` is the local Julia variable. Two-space indentation and a constructor
+call at the leaf produce the same configuration:
+
+```@example Heron
+algorithm = @algorithm """
+HeronAlgorithm
+  stopping_criterion: StopAfterIteration(limit)
+"""
+```
+
+### [Tree input rules](@id algorithm-tree-input)
+
+| Part | Rule |
+| --- | --- |
+| Argument | A nonempty literal string. Write variable names inside the tree; do not interpolate the outer string or pass a string variable. |
+| Root | The first nonblank line names an `Algorithm` type. A trailing `:` is optional. |
+| Children | Each line has `name: value`. Names must be Julia identifiers and cannot repeat under the same parent. Only the first `:` separates the name from the value. |
+| Values | One complete Julia expression per line. Empty values, incomplete expressions, and separate expressions such as `1; 2` are rejected. Standalone comment lines are not supported. |
+| Whitespace | Blank lines, trailing whitespace, and a common left margin are ignored. Use spaces for indentation. |
+| Nesting | Choose two spaces per level or Unicode connectors. Do not mix styles or skip a parent level. |
+
+In Unicode trees, the space after each connector is required. Ancestor columns
+must also match the sibling structure:
+
+| Prefix | Use |
+| --- | --- |
+| `├─ ` | A child followed by another sibling. |
+| `└─ ` | The last child of a parent. |
+| `│  ` | A column for an ancestor that has a later sibling: `│` and two spaces. |
+| Three spaces | A column for an ancestor that has no later sibling. |
+
+A node with children names an `Algorithm` or `StoppingCriterion` type. Qualified
+names and explicit type parameters are allowed. A leaf is an ordinary Julia
+expression, evaluated once in the caller's scope, in source order. A bare type at
+a leaf remains a type value; use `EmptyAlgorithm()` to construct an instance.
+The root is always constructed, even if it has no children.
+
+An applicable keyword constructor receives the named fields and supplies its own
+defaults. Otherwise, supply every stored field with no extras. The positional
+constructor receives them in declaration order, regardless of their order in the
+tree. For a `StopWhenAll` or `StopWhenAny` branch, use `criteria: (a, b)`; the tuple's
+elements are passed as separate arguments. A one-element tuple needs a comma.
+
+### When validation happens
+
+The parser checks spacing, connectors, field syntax, duplicates, and Julia
+expression syntax during macro expansion. A malformed tree inside a function is
+rejected when the function definition is expanded, even if the function is never
+called.
+
+Constructor types, supported fields, and argument values are checked when the
+generated code runs. They may depend on local variables or function arguments,
+which the macro does not evaluate. Errors raised by leaf expressions or user
+constructors keep their original exception types.
+
+### Display and reconstruction
+
+The default `text/plain` display of an `Algorithm`, including REPL display, shows
+its stored fields as a Unicode tree. `AlgorithmsInterface.algorithmtree(algorithm)`
+returns the same text; `style=:indent` selects two-space indentation. Two-argument
+`show`, `@show`, and compact display keep their usual representation.
+
+You can edit the output and pass it to `@algorithm` when its leaves are valid Julia
+expressions and its constructors accept the displayed fields. The named modules
+must be loaded. Leaf expressions execute Julia code.
+
+The display has these limits:
+
+- It reads stored fields with `getfield`; properties supplied by `getproperty` are
+  not included.
+- Constructor type parameters are inferred again. Parameters that cannot be
+  recovered from the fields may be lost or prevent reconstruction.
+- Shared references are printed separately. Reconstruction does not preserve
+  their identity. Cycles print as `<cycle>` and cannot be reconstructed.
+- Tuples, named tuples, and vectors use the tree's leaf printer recursively. Other
+  containers use ordinary `show`, which may not preserve every element's type.
+  Values such as closures and open streams generally cannot be reconstructed.
+
+### Errors
+
+The following exceptions are available through `AlgorithmsInterface.`:
+
+| Exception | Cause |
+| --- | --- |
+| `TreeInputError` | Empty tree or nonliteral macro argument. |
+| `TreeLayoutError` | Invalid indentation, connectors, or nesting. |
+| `TreeFieldError` | Malformed or repeated fields, or fields that do not match a positional constructor. |
+| `TreeExpressionError` | A value is not one complete Julia expression. |
+| `TreeConstructorError` | The root or a branch evaluates to an unsupported type. |
+
+They inherit from `AlgorithmsInterface.AlgorithmTreeError` and provide `message`
+and `line` fields. Line numbers refer to the tree string; nonliteral input has
+`line = nothing`. An unsupported display style raises `ArgumentError`.
+
+```@docs
+@algorithm
+AlgorithmsInterface.algorithmtree
+AlgorithmsInterface.AlgorithmTreeError
+AlgorithmsInterface.TreeInputError
+AlgorithmsInterface.TreeLayoutError
+AlgorithmsInterface.TreeFieldError
+AlgorithmsInterface.TreeExpressionError
+AlgorithmsInterface.TreeConstructorError
+```
+
 ## Reference: Core interface types & functions
 
 Below are the automatic API docs for the core interface pieces. Read them after grasping the example above – the intent should now be clearer.

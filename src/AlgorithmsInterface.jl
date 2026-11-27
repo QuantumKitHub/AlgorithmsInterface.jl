@@ -18,6 +18,12 @@ include("interface/state.jl")
 include("interface/interface.jl")
 
 include("stopping_criterion.jl")
+
+include("tree/errors.jl")
+include("tree/parser.jl")
+include("tree/construction.jl")
+include("tree/display.jl")
+
 include("default_state.jl")
 include("logging.jl")
 
@@ -25,6 +31,7 @@ include("test_suite.jl")
 
 # general interface
 export Algorithm, Problem, State
+export @algorithm
 export DefaultState
 export initialize_state, initialize_state!
 export finalize_state!
