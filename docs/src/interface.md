@@ -187,6 +187,30 @@ println("Approximate sqrt: ", solve(SqrtProblem(16.0), HeronAlgorithm(StopAfterI
 
 Note that the three required *properties* do not enforce a struct with these *fields*, and the properties can be emulated with correct implementations of `Base.getproperty`.
 
+## Tree display
+
+The default `text/plain` display of an `Algorithm`, including REPL display, shows
+its stored fields as a tree. `AlgorithmsInterface.algorithmtree` returns the same
+text as a string. For the `HeronAlgorithm` defined above:
+
+```@example Heron
+algorithm = HeronAlgorithm(StopAfterIteration(8))
+println(AlgorithmsInterface.algorithmtree(algorithm))
+```
+
+Use `style=:indent` for two-space indentation instead of Unicode connectors.
+Two-argument `show`, `@show`, and compact display keep their usual representation.
+The tree reads stored fields with `getfield`; properties supplied only by
+`getproperty` are not included. Cycles between algorithms or stopping criteria
+print as `<cycle>`, while shared children are shown on each branch.
+
+Leaf values use ordinary `show`, with full precision and no truncation. This
+output is for inspection and does not preserve every leaf's type.
+
+```@docs
+AlgorithmsInterface.algorithmtree
+```
+
 ## Reference: Core interface types & functions
 
 Below are the automatic API docs for the core interface pieces. Read them after grasping the example above – the intent should now be clearer.
