@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- The default `text/plain` display of an `Algorithm` now shows its public properties as a tree. Two-argument `show` and compact display are unchanged.
+- `text/plain` display of an `Algorithm` now shows its public properties as a tree, with an abbreviated summary in compact contexts.
 - `indicates_convergence` without a state moved to the type domain: a new criterion implements `indicates_convergence(::Type{YourCriterion})`, and `indicates_convergence(criterion)` forwards to it.
   `StopWhenAll` and `StopWhenAny` combine their children in the type domain as well, so a criterion that only implements the variant taking an instance is no longer accounted for in a group.
 - `StopAfterIteration` now uses the default `initialize_state` and `initialize_state!`.

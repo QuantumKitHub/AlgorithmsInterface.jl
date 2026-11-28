@@ -189,28 +189,15 @@ Note that the three required *properties* do not enforce a struct with these *fi
 
 ## Tree display
 
-The default `text/plain` display of an `Algorithm`, including REPL display, shows its public properties as a tree.
-For the `HeronAlgorithm` defined above:
+Algorithms display their public properties as a tree in the REPL or with `display`:
 
 ```@example Heron
 algorithm = HeronAlgorithm(StopAfterIteration(8))
-show(stdout, MIME"text/plain"(), algorithm)
+algorithm
 ```
 
-The output uses Unicode tree connectors.
-Two-argument `show`, `@show`, and compact display keep their usual representation.
-The tree reads names from `propertynames` and values from `getproperty`, including computed properties.
-Only nested algorithms and stopping criteria expand; other values use ordinary `show`.
-Type names include their parameters and use Julia's default module qualification.
-Shared children are shown on each branch.
-Expansion stops after 20 levels and prints `…`, which also bounds cyclic configurations.
-Multiline leaf values keep their ordinary formatting; their continuation lines are not indented by the tree printer.
-This output is for inspection and does not preserve every leaf's type.
-
-To capture the same output as a string, use Julia's standard `sprint`:
-
-```julia
-text = sprint(show, MIME"text/plain"(), algorithm)
+```@docs
+Base.show(::IO, ::MIME"text/plain", ::Algorithm)
 ```
 
 ## Reference: Core interface types & functions

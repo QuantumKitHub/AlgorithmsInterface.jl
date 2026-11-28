@@ -19,7 +19,7 @@ include("interface/interface.jl")
 
 include("stopping_criterion.jl")
 
-include("tree/display.jl")
+include("interface/printing.jl")
 
 include("default_state.jl")
 include("logging.jl")

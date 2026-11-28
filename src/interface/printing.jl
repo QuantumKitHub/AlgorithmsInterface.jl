@@ -36,23 +36,14 @@ end
 """
     show(io::IO, ::MIME"text/plain", algorithm::Algorithm)
 
-Print the public properties of `algorithm` as a tree with Unicode connectors.
-Names come from `propertynames` and values from `getproperty`.
-Nested algorithms and stopping criteria expand; other values use ordinary `show`.
-Type names use ordinary `show`, including type parameters and default module qualification.
-Expansion stops after 20 levels and prints `…` for remaining children.
-The output is intended for inspection; it does not preserve every leaf's type.
-
-Two-argument `show` and compact display keep their usual representation.
-Use `sprint(show, MIME"text/plain"(), algorithm)` when a string is needed.
+Print an algorithm as a tree, expanding nested algorithms and stopping criteria.
 """
 function Base.show(io::IO, ::MIME"text/plain", algorithm::Algorithm)::Nothing
+    print(io, sprint(show, typeof(algorithm)))
     if get(io, :compact, false)
-        show(io, algorithm)
+        print(io, "(…)")
     else
-        print(io, sprint(show, typeof(algorithm)))
         _show_children(io, algorithm)
     end
-
     return nothing
 end

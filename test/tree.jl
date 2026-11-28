@@ -68,11 +68,33 @@ const TreeFixtures = AlgorithmTreeFixtures
         @test occursin("│  └─ value:", tree)
     end
 
-    @testset "Compact contexts retain ordinary Julia printing" begin
+    @testset "Two-argument show and @show keep Julia's default behavior" begin
+        algorithm = original
+        # The algorithm must dispatch to Base's fallback, not a package override.
+        @test which(show, (IOBuffer, typeof(algorithm))) === which(show, (IOBuffer, Any))
+        expected = repr(algorithm)
+        @test !occursin('\n', expected)
+
+        # Exercise the actual macro, including its label and returned value.
+        function emit_algorithm()::Algorithm
+            return @show algorithm
+        end
+        mktemp(function check_stdout(::String, stream::IOStream)::Nothing
+            @test redirect_stdout(emit_algorithm, stream) === algorithm
+            flush(stream)
+            seekstart(stream)
+            @test read(stream, String) == "algorithm = " * expected * "\n"
+            return nothing
+        end)
+    end
+
+    @testset "Compact plain-text display abbreviates the algorithm" begin
         compact_plain = sprint(show, MIME"text/plain"(), original; context = :compact => true)
-        compact_show = sprint(show, original; context = :compact => true)
-        @test compact_plain == compact_show
+        @test compact_plain == sprint(show, typeof(original)) * "(…)"
+        @test !occursin('\n', repr([original]; context = :compact => true))
         @test !occursin('\n', repr([original]))
+        io = IOContext(IOBuffer(), :compact => true)
+        @test (@inferred show(io, MIME"text/plain"(), original)) === nothing
     end
 
     @testset "Depth is bounded and shared children print on both branches" begin
