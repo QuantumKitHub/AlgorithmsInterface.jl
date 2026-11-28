@@ -36,6 +36,20 @@ struct Outer{A <: Algorithm, S <: StoppingCriterion} <: Algorithm
     stopping_criterion::S
 end
 
+# Expose a computed property instead of the internal storage field.
+struct PublicOptions <: Algorithm
+    storage::Float64
+end
+Base.propertynames(::PublicOptions)::Tuple{Symbol} = (:tolerance,)
+function Base.getproperty(x::PublicOptions, name::Symbol)::Float64
+    return name === :tolerance ? 2getfield(x, :storage) : getfield(x, name)
+end
+
+# This is a leaf, even though it has properties of its own.
+struct PlainValue
+    number::Int
+end
+
 # Mutable solely so display can be tested against a self-reference.
 mutable struct Cycle <: Algorithm
     child::Any
@@ -50,9 +64,8 @@ const TreeFixtures = AlgorithmTreeFixtures
 
     @testset "Plain-text display uses the Unicode tree" begin
         tree = sprint(show, MIME"text/plain"(), original)
-        @test tree == AlgorithmsInterface.algorithmtree(original)
+        @test occursin("├─ inner:", tree)
         @test occursin("│  └─ value:", tree)
-        @test_throws ArgumentError AlgorithmsInterface.algorithmtree(original; style = :bad)
     end
 
     @testset "Compact contexts retain ordinary Julia printing" begin
@@ -62,20 +75,23 @@ const TreeFixtures = AlgorithmTreeFixtures
         @test !occursin('\n', repr([original]))
     end
 
-    @testset "Cycles terminate, but shared children are not cycles" begin
+    @testset "Depth is bounded and shared children print on both branches" begin
         cycle = TreeFixtures.Cycle(nothing)
         cycle.child = cycle
-        @test occursin("<cycle>", sprint(show, MIME"text/plain"(), cycle))
+        tree = sprint(show, MIME"text/plain"(), cycle)
+        @test endswith(tree, "…")
+        @test length(split(tree, '\n')) <= 25
 
         # Visiting the same child on two separate branches must remain valid.
         shared = TreeFixtures.Leaf(2)
         shared_algorithm = TreeFixtures.Solver(shared, shared, 2)
-        tree = AlgorithmsInterface.algorithmtree(shared_algorithm)
-        @test !occursin("<cycle>", tree)
+        tree = sprint(show, MIME"text/plain"(), shared_algorithm)
+        @test !occursin("…", tree)
+        @test count("value: 2", tree) == 2
     end
 end
 
-@testset "nested tree display in both styles" begin
+@testset "nested tree display writes Unicode directly to IO" begin
     # Build the object with ordinary constructors. These checks need no input macro.
     algorithm = TreeFixtures.Outer(
         TreeFixtures.Inner(0.1, StopAfterIteration(10)), StopAfterIteration(20)
@@ -93,17 +109,26 @@ end
     └─ stopping_criterion: $(criterion_name)
        └─ max_iterations: 20
     """
-    indented_tree = """
-    $(outer_name)
-      inner: $(inner_name)
-        step_size: 0.1
-        stopping_criterion: $(criterion_name)
-          max_iterations: 10
-      stopping_criterion: $(criterion_name)
-        max_iterations: 20
-    """
-    @test (@inferred AlgorithmsInterface.algorithmtree(algorithm)) == chomp(unicode_tree)
-    @test (@inferred AlgorithmsInterface.algorithmtree(algorithm; style = :indent)) == chomp(indented_tree)
-    @test (@inferred show(IOBuffer(), MIME"text/plain"(), algorithm)) === nothing
-    @test AlgorithmsInterface.algorithmtree(TreeFixtures.Empty()) == sprint(show, TreeFixtures.Empty)
+    io = IOBuffer()
+    @test (@inferred show(io, MIME"text/plain"(), algorithm)) === nothing
+    @test String(take!(io)) == chomp(unicode_tree)
+    @test sprint(show, MIME"text/plain"(), TreeFixtures.Empty()) == sprint(show, TreeFixtures.Empty)
+end
+
+@testset "Public properties and ordinary leaf values" begin
+    algorithm = TreeFixtures.PublicOptions(0.25)
+    tree = sprint(show, MIME"text/plain"(), algorithm)
+    @test tree == sprint(show, typeof(algorithm)) * "\n└─ tolerance: 0.5"
+    @test !occursin("storage:", tree)
+
+    # Real leaf values must appear, including quoted strings and structured leaves.
+    for value in (0.125, "hello", TreeFixtures.PlainValue(7))
+        algorithm = TreeFixtures.Leaf(value)
+        @test sprint(show, MIME"text/plain"(), algorithm) ==
+            sprint(show, typeof(algorithm)) * "\n└─ value: " * sprint(show, value)
+    end
+
+    # The generic helper must not install tree display for unrelated types.
+    value = TreeFixtures.PlainValue(7)
+    @test sprint(show, MIME"text/plain"(), value) == sprint(show, value)
 end

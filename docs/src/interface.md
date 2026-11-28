@@ -189,26 +189,28 @@ Note that the three required *properties* do not enforce a struct with these *fi
 
 ## Tree display
 
-The default `text/plain` display of an `Algorithm`, including REPL display, shows
-its stored fields as a tree. `AlgorithmsInterface.algorithmtree` returns the same
-text as a string. For the `HeronAlgorithm` defined above:
+The default `text/plain` display of an `Algorithm`, including REPL display, shows its public properties as a tree.
+For the `HeronAlgorithm` defined above:
 
 ```@example Heron
 algorithm = HeronAlgorithm(StopAfterIteration(8))
-println(AlgorithmsInterface.algorithmtree(algorithm))
+show(stdout, MIME"text/plain"(), algorithm)
 ```
 
-Use `style=:indent` for two-space indentation instead of Unicode connectors.
+The output uses Unicode tree connectors.
 Two-argument `show`, `@show`, and compact display keep their usual representation.
-The tree reads stored fields with `getfield`; properties supplied only by
-`getproperty` are not included. Cycles between algorithms or stopping criteria
-print as `<cycle>`, while shared children are shown on each branch.
+The tree reads names from `propertynames` and values from `getproperty`, including computed properties.
+Only nested algorithms and stopping criteria expand; other values use ordinary `show`.
+Type names include their parameters and use Julia's default module qualification.
+Shared children are shown on each branch.
+Expansion stops after 20 levels and prints `…`, which also bounds cyclic configurations.
+Multiline leaf values keep their ordinary formatting; their continuation lines are not indented by the tree printer.
+This output is for inspection and does not preserve every leaf's type.
 
-Leaf values use ordinary `show`, with full precision and no truncation. This
-output is for inspection and does not preserve every leaf's type.
+To capture the same output as a string, use Julia's standard `sprint`:
 
-```@docs
-AlgorithmsInterface.algorithmtree
+```julia
+text = sprint(show, MIME"text/plain"(), algorithm)
 ```
 
 ## Reference: Core interface types & functions

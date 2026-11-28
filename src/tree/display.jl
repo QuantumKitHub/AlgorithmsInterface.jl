@@ -1,90 +1,57 @@
-function _tree_prefixes(prefix::String, is_last::Bool)::Tuple{String, String}
-    # Return the node's connector and the column to use for its children.
-    if is_last
-        return prefix * "└─ ", prefix * "   "
-    end
+const TREE_MAX_DEPTH = 20
 
-    return prefix * "├─ ", prefix * "│  "
-end
+function _show_children(
+        io::IO, x::T, prefix::String = "", depth::Int = 0,
+    )::Nothing where {T}
+    names = propertynames(x)
+    isempty(names) && return nothing
 
-function _show_algorithm_tree(
-        io::IO, value::Union{Algorithm, StoppingCriterion},
-        prefix::String, depth::Int, style::Symbol, active::IdDict
-    )::Nothing
-    if haskey(active, value)
-        print(io, "<cycle>")
+    # Bound recursive configurations without tracking object identities.
+    if depth >= TREE_MAX_DEPTH
+        print(io, '\n', prefix, "…")
         return nothing
     end
 
-    print(io, sprint(show, typeof(value)))
-    names = fieldnames(typeof(value))
+    for (i, name) in enumerate(names)
+        child = getproperty(x, name)
+        is_last = i == length(names)
+        connector = is_last ? "└─ " : "├─ "
 
-    if isempty(names) && depth > 0
-        print(io, "()")
-    end
+        print(io, '\n', prefix, connector, name, ": ")
 
-    active[value] = nothing
+        if child isa Algorithm || child isa StoppingCriterion
+            print(io, sprint(show, typeof(child)))
 
-    try
-        for (i, name) in enumerate(names)
-            is_last = i == length(names)
-            line_prefix, child_prefix = _tree_prefixes(prefix, is_last)
-
-            if style === :unicode
-                marker = line_prefix
-            else
-                marker = repeat("  ", depth + 1)
-            end
-
-            print(io, '\n', marker, name, ": ")
-            child = getfield(value, name)
-
-            if child isa Union{Algorithm, StoppingCriterion}
-                _show_algorithm_tree(
-                    io, child, child_prefix,
-                    depth + 1, style, active
-                )
-            else
-                show(IOContext(io, :compact => false, :limit => false), child)
-            end
+            column = is_last ? "   " : "│  "
+            child_prefix = prefix * column
+            _show_children(io, child, child_prefix, depth + 1)
+        else
+            show(io, child)
         end
-    finally
-        delete!(active, value)
     end
 
     return nothing
 end
 
 """
-    AlgorithmsInterface.algorithmtree(algorithm; style=:unicode) -> String
+    show(io::IO, ::MIME"text/plain", algorithm::Algorithm)
 
-Return a string showing the stored fields of `algorithm` as a tree.
-Use `style=:unicode` for tree connectors or `style=:indent` for two-space indentation.
-Other styles throw `ArgumentError`.
-
-Leaf values use ordinary `show` with full precision and no truncation.
-Cycles between algorithms or stopping criteria print as `<cycle>`.
+Print the public properties of `algorithm` as a tree with Unicode connectors.
+Names come from `propertynames` and values from `getproperty`.
+Nested algorithms and stopping criteria expand; other values use ordinary `show`.
+Type names use ordinary `show`, including type parameters and default module qualification.
+Expansion stops after 20 levels and prints `…` for remaining children.
 The output is intended for inspection; it does not preserve every leaf's type.
 
-The default `text/plain` display of an `Algorithm` uses this tree. Two-argument
-`show` and compact display keep their usual representation.
+Two-argument `show` and compact display keep their usual representation.
+Use `sprint(show, MIME"text/plain"(), algorithm)` when a string is needed.
 """
-function algorithmtree(algorithm::Algorithm; style::Symbol = :unicode)::String
-    if style !== :unicode && style !== :indent
-        throw(ArgumentError("style must be :unicode or :indent"))
-    end
-
-    io = IOBuffer()
-    _show_algorithm_tree(io, algorithm, "", 0, style, IdDict())
-
-    return String(take!(io))
-end
-
 function Base.show(io::IO, ::MIME"text/plain", algorithm::Algorithm)::Nothing
     if get(io, :compact, false)
         show(io, algorithm)
     else
-        _show_algorithm_tree(io, algorithm, "", 0, :unicode, IdDict())
+        print(io, sprint(show, typeof(algorithm)))
+        _show_children(io, algorithm)
     end
 
     return nothing
