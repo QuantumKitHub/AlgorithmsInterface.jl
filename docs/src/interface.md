@@ -187,6 +187,19 @@ println("Approximate sqrt: ", solve(SqrtProblem(16.0), HeronAlgorithm(StopAfterI
 
 Note that the three required *properties* do not enforce a struct with these *fields*, and the properties can be emulated with correct implementations of `Base.getproperty`.
 
+## Tree display
+
+Algorithms display their public properties as a tree in the REPL or with `display`:
+
+```@example Heron
+algorithm = HeronAlgorithm(StopAfterIteration(8))
+algorithm
+```
+
+```@docs
+Base.show(::IO, ::MIME"text/plain", ::Algorithm)
+```
+
 ## Reference: Core interface types & functions
 
 Below are the automatic API docs for the core interface pieces. Read them after grasping the example above – the intent should now be clearer.
