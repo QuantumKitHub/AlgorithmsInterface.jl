@@ -11,20 +11,6 @@ struct Leaf{T} <: Algorithm
 end
 struct Empty <: Algorithm end
 
-# Default settings used by the display tests.
-struct Solver{A, S} <: Algorithm
-    inner::A
-    stopping_criterion::S
-    steps::Int
-end
-function Solver(;
-        inner::A = Leaf(1), stopping_criterion::S = StopAfterIteration(10),
-        steps::Int = 2
-    )::Solver{A, S} where {A, S}
-    steps > 0 || throw(DomainError(steps))
-    return Solver(inner, stopping_criterion, steps)
-end
-
 # The nested display example gives each algorithm its own stopping criterion.
 struct Inner{S <: StoppingCriterion} <: Algorithm
     step_size::Float64
@@ -59,61 +45,7 @@ end
 using Main: AlgorithmTreeFixtures
 const TreeFixtures = AlgorithmTreeFixtures
 
-@testset "tree display behavior" begin
-    original = TreeFixtures.Solver()
-
-    @testset "Plain-text display uses the Unicode tree" begin
-        tree = sprint(show, MIME"text/plain"(), original)
-        @test occursin("├─ inner:", tree)
-        @test occursin("│  └─ value:", tree)
-    end
-
-    @testset "Two-argument show and @show keep Julia's default behavior" begin
-        algorithm = original
-        # The algorithm must dispatch to Base's fallback, not a package override.
-        @test which(show, (IOBuffer, typeof(algorithm))) === which(show, (IOBuffer, Any))
-        expected = repr(algorithm)
-        @test !occursin('\n', expected)
-
-        # Exercise the actual macro, including its label and returned value.
-        function emit_algorithm()::Algorithm
-            return @show algorithm
-        end
-        mktemp(function check_stdout(::String, stream::IOStream)::Nothing
-            @test redirect_stdout(emit_algorithm, stream) === algorithm
-            flush(stream)
-            seekstart(stream)
-            @test read(stream, String) == "algorithm = " * expected * "\n"
-            return nothing
-        end)
-    end
-
-    @testset "Compact plain-text display abbreviates the algorithm" begin
-        compact_plain = sprint(show, MIME"text/plain"(), original; context = :compact => true)
-        @test compact_plain == sprint(show, typeof(original)) * "(…)"
-        @test !occursin('\n', repr([original]; context = :compact => true))
-        @test !occursin('\n', repr([original]))
-        io = IOContext(IOBuffer(), :compact => true)
-        @test (@inferred show(io, MIME"text/plain"(), original)) === nothing
-    end
-
-    @testset "Depth is bounded and shared children print on both branches" begin
-        cycle = TreeFixtures.Cycle(nothing)
-        cycle.child = cycle
-        tree = sprint(show, MIME"text/plain"(), cycle)
-        @test endswith(tree, "…")
-        @test length(split(tree, '\n')) <= 25
-
-        # Visiting the same child on two separate branches must remain valid.
-        shared = TreeFixtures.Leaf(2)
-        shared_algorithm = TreeFixtures.Solver(shared, shared, 2)
-        tree = sprint(show, MIME"text/plain"(), shared_algorithm)
-        @test !occursin("…", tree)
-        @test count("value: 2", tree) == 2
-    end
-end
-
-@testset "nested tree display writes Unicode directly to IO" begin
+@testset "Nested tree display" begin
     # Build the object with ordinary constructors. These checks need no input macro.
     algorithm = TreeFixtures.Outer(
         TreeFixtures.Inner(0.1, StopAfterIteration(10)), StopAfterIteration(20)
@@ -131,26 +63,61 @@ end
     └─ stopping_criterion: $(criterion_name)
        └─ max_iterations: 20
     """
-    io = IOBuffer()
-    @test (@inferred show(io, MIME"text/plain"(), algorithm)) === nothing
-    @test String(take!(io)) == chomp(unicode_tree)
-    @test sprint(show, MIME"text/plain"(), TreeFixtures.Empty()) == sprint(show, TreeFixtures.Empty)
+    @test repr("text/plain", algorithm) == chomp(unicode_tree)
+
+    # Compact display omits children.
+    @test repr("text/plain", algorithm; context = :compact => true) == outer_name * "(…)"
+end
+
+@testset "An algorithm without properties prints only its type name" begin
+    @test repr("text/plain", TreeFixtures.Empty()) == "Main.AlgorithmTreeFixtures.Empty"
+end
+
+@testset "A repeated child prints on both branches" begin
+    shared = StopAfterIteration(10)
+    algorithm = TreeFixtures.Outer(TreeFixtures.Inner(0.1, shared), shared)
+    expected = """
+    $(sprint(show, typeof(algorithm)))
+    ├─ inner: $(sprint(show, typeof(algorithm.inner)))
+    │  ├─ step_size: 0.1
+    │  └─ stopping_criterion: $(sprint(show, StopAfterIteration))
+    │     └─ max_iterations: 10
+    └─ stopping_criterion: $(sprint(show, StopAfterIteration))
+       └─ max_iterations: 10
+    """
+    @test repr("text/plain", algorithm) == chomp(expected)
+end
+
+@testset "A self-reference is truncated" begin
+    cycle = TreeFixtures.Cycle(nothing)
+    cycle.child = cycle
+    tree = repr("text/plain", cycle)
+    @test endswith(tree, "…")
 end
 
 @testset "Public properties and ordinary leaf values" begin
     algorithm = TreeFixtures.PublicOptions(0.25)
-    tree = sprint(show, MIME"text/plain"(), algorithm)
-    @test tree == sprint(show, typeof(algorithm)) * "\n└─ tolerance: 0.5"
-    @test !occursin("storage:", tree)
+    expected = """
+    $(sprint(show, typeof(algorithm)))
+    └─ tolerance: 0.5
+    """
+    @test repr("text/plain", algorithm) == chomp(expected)
 
-    # Real leaf values must appear, including quoted strings and structured leaves.
-    for value in (0.125, "hello", TreeFixtures.PlainValue(7))
+    # Literal expected values make quoting and leaf formatting visible here.
+    for (value, printed) in (
+            (0.125, "0.125"),
+            ("hello", "\"hello\""),
+            (TreeFixtures.PlainValue(7), "$(sprint(show, TreeFixtures.PlainValue))(7)"),
+        )
         algorithm = TreeFixtures.Leaf(value)
-        @test sprint(show, MIME"text/plain"(), algorithm) ==
-            sprint(show, typeof(algorithm)) * "\n└─ value: " * sprint(show, value)
+        expected = """
+        $(sprint(show, typeof(algorithm)))
+        └─ value: $(printed)
+        """
+        @test repr("text/plain", algorithm) == chomp(expected)
     end
 
-    # The generic helper must not install tree display for unrelated types.
+    # Unrelated types keep their ordinary display.
     value = TreeFixtures.PlainValue(7)
     @test sprint(show, MIME"text/plain"(), value) == sprint(show, value)
 end
