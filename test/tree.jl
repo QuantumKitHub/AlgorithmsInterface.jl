@@ -80,26 +80,30 @@ end
     algorithm = TreeFixtures.Outer(
         TreeFixtures.Inner(0.1, StopAfterIteration(10)), StopAfterIteration(20)
     )
+    # Type headers follow Base.show, including parameters and default qualification.
+    outer_name = sprint(show, typeof(algorithm))
+    inner_name = sprint(show, typeof(algorithm.inner))
+    criterion_name = sprint(show, StopAfterIteration)
     unicode_tree = """
-    Main.AlgorithmTreeFixtures.Outer
-    ├─ inner: Main.AlgorithmTreeFixtures.Inner
+    $(outer_name)
+    ├─ inner: $(inner_name)
     │  ├─ step_size: 0.1
-    │  └─ stopping_criterion: AlgorithmsInterface.StopAfterIteration
+    │  └─ stopping_criterion: $(criterion_name)
     │     └─ max_iterations: 10
-    └─ stopping_criterion: AlgorithmsInterface.StopAfterIteration
+    └─ stopping_criterion: $(criterion_name)
        └─ max_iterations: 20
     """
     indented_tree = """
-    Main.AlgorithmTreeFixtures.Outer
-      inner: Main.AlgorithmTreeFixtures.Inner
+    $(outer_name)
+      inner: $(inner_name)
         step_size: 0.1
-        stopping_criterion: AlgorithmsInterface.StopAfterIteration
+        stopping_criterion: $(criterion_name)
           max_iterations: 10
-      stopping_criterion: AlgorithmsInterface.StopAfterIteration
+      stopping_criterion: $(criterion_name)
         max_iterations: 20
     """
     @test (@inferred AlgorithmsInterface.algorithmtree(algorithm)) == chomp(unicode_tree)
     @test (@inferred AlgorithmsInterface.algorithmtree(algorithm; style = :indent)) == chomp(indented_tree)
     @test (@inferred show(IOBuffer(), MIME"text/plain"(), algorithm)) === nothing
-    @test AlgorithmsInterface.algorithmtree(TreeFixtures.Empty()) == "Main.AlgorithmTreeFixtures.Empty"
+    @test AlgorithmsInterface.algorithmtree(TreeFixtures.Empty()) == sprint(show, TreeFixtures.Empty)
 end

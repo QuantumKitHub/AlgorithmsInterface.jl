@@ -1,8 +1,3 @@
-function _tree_name(type::Type)::String
-    module_path = Base.fullname(parentmodule(type))
-    return join((module_path..., nameof(type)), ".")
-end
-
 function _tree_prefixes(prefix::String, is_last::Bool)::Tuple{String, String}
     # Return the node's connector and the column to use for its children.
     if is_last
@@ -21,7 +16,7 @@ function _show_algorithm_tree(
         return nothing
     end
 
-    print(io, _tree_name(typeof(value)))
+    print(io, sprint(show, typeof(value)))
     names = fieldnames(typeof(value))
 
     if isempty(names) && depth > 0
